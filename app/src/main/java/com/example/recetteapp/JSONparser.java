@@ -16,7 +16,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 public class JSONparser {
 
-    private static final String MAIN_URL = "https://script.google.com/macros/s/AKfycbxOLElujQcy1-ZUer1KgEvK16gkTLUqYftApjNCM_IRTL3HSuDk/exec?id=1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74&sheet=products";
+    private static final String MAIN_URL = "https://script.google.com/macros/s/AKfycbxOLElujQcy1-ZUer1KgEvK16gkTLUqYftApjNCM_IRTL3HSuDk/exec?id=1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74&sheet=";
 
     public static final String TAG = "TAG";
 
@@ -24,11 +24,25 @@ public class JSONparser {
 
     private static Response response;
 
-    public static JSONObject getDataFromWeb() {
+    public static JSONObject getProductFromWeb() {
         try {
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
-                    .url(MAIN_URL)
+                    .url(MAIN_URL+"products")
+                    .build();
+            response = client.newCall(request).execute();
+            return new JSONObject(response.body().string());
+        } catch (@NonNull IOException | JSONException e) {
+            Log.e(TAG, "" + e.getLocalizedMessage());
+        }
+        return null;
+    }
+
+    public static JSONObject getUserInfoFromWeb() {
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(MAIN_URL+"employees")
                     .build();
             response = client.newCall(request).execute();
             return new JSONObject(response.body().string());

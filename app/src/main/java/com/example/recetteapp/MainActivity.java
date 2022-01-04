@@ -17,19 +17,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-
 
 public class MainActivity extends AppCompatActivity {
     private ListView listView;
-    private ArrayList<ProductModel> list;
     private ProductArrayAdapter adapter;
+    private static final String TAG = MainActivity.class.getName();
 
     public static FloatingActionButton fab;
 
@@ -38,8 +35,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        list = new ArrayList<>();
-        adapter = new ProductArrayAdapter(this, list);
+
+        adapter = new ProductArrayAdapter(this, Utils.productList);
 
         listView = findViewById(R.id.listView);
         listView.setAdapter(adapter);
@@ -48,8 +45,9 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 Intent intent = new Intent(MainActivity.this, ScannerActivity.class);
-                intent.putExtra("pos", list.get(position));
+                intent.putExtra("pos", position);
                 startActivity(intent);
+
 
 //                Snackbar.make(inflate.findViewById(R.id.parentLayout), list.get(position).getBrandID() + " => " + list.get(position).getItemName(), Snackbar.LENGTH_LONG).show();
             }
@@ -66,13 +64,24 @@ public class MainActivity extends AppCompatActivity {
                 if (InternetConnection.checkConnection(MainActivity.this)) {
                     new GetProducts().execute();
                 } else {
-                    Snackbar.make(view, "Internet Connection Not Available", Snackbar.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Internet Connection Not Available", Toast.LENGTH_SHORT).show();
                 }
             }
         });
         new GetProducts().execute();
 
     }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        if (InternetConnection.checkConnection(MainActivity.this)) {
+            new GetProducts().execute();
+        } else {
+            Toast.makeText(MainActivity.this, "Internet Connection Not Available", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     class GetProducts extends AsyncTask<Void, Void, Void> {
 
         ProgressDialog dialog;
@@ -85,8 +94,8 @@ public class MainActivity extends AppCompatActivity {
             /**
              * Progress Dialog for User Interaction
              */
-
-            x = list.size();
+            Utils.productList.clear();
+            x = Utils.productList.size();
 
             if (x == 0)
                 jIndex = 0;
@@ -106,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
             /**
              * Getting JSON Object from Web Using okHttp
              */
-            JSONObject jsonObject = JSONparser.getDataFromWeb();
+            JSONObject jsonObject = JSONparser.getProductFromWeb();
 
             try {
                 /**
@@ -167,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                                 /**
                                  * Adding name and phone concatenation in List...
                                  */
-                                list.add(model);
+                                Utils.productList.add(model);
                             }
                         }
                     }
@@ -188,10 +197,9 @@ public class MainActivity extends AppCompatActivity {
              * Checking if List size if more than zero then
              * Update ListView
              */
-            if (list.size() > 0) {
+            if (Utils.productList.size() > 0) {
                 adapter.notifyDataSetChanged();
-                Utils.productList.clear();
-                Utils.productList.addAll(list);
+
             } else {
                 Toast.makeText(MainActivity.this, "No Data Found", Toast.LENGTH_SHORT).show();            }
         }
