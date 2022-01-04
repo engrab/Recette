@@ -105,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
             dialog = new ProgressDialog(MainActivity.this);
             dialog.setTitle("Hey Wait Please..." + x);
             dialog.setMessage("I am getting your Data");
+            dialog.setCancelable(false);
             dialog.show();
         }
 

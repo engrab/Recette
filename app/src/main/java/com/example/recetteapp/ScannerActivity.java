@@ -57,7 +57,6 @@ import java.text.SimpleDateFormat;
 import java.util.EnumMap;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Objects;
 
 public class ScannerActivity extends AppCompatActivity {
 
@@ -115,7 +114,6 @@ public class ScannerActivity extends AppCompatActivity {
         }
 
 
-
         //If the device were rotated then restore information
         if (savedInstanceState != null) {
             qrcode = savedInstanceState.getString(STATE_QRCODE);
@@ -151,15 +149,12 @@ public class ScannerActivity extends AppCompatActivity {
             public void onClick(View view) {
 
                 int size = Utils.userList.size();
-                String id = tvUserId.getText().toString();
-                String pass = password.getText().toString();
 
-                if (size > 0){
-                    for (int i = 0; i < size; i++){
-                        if (Utils.userList.get(i).getId().equals(id)){
-                            if (Utils.userList.get(i).getPassword().equals(pass)){
-                                deductBalance(i);
-                                Toast.makeText(ScannerActivity.this, "Successfully Transcation", Toast.LENGTH_SHORT).show();
+                if (size > 0) {
+                    for (int i = 0; i < size; i++) {
+                        if (Utils.userList.get(i).getId().equals(tvUserId.getText().toString())) {
+                            if (Utils.userList.get(i).getPassword().equals(password.getText().toString())) {
+                                deductBalanceQuantity(i);
                                 break;
                             }
                         }
@@ -169,14 +164,32 @@ public class ScannerActivity extends AppCompatActivity {
         });
     }
 
-    private void deductBalance(int i) {
+    private void deductBalanceQuantity(int i) {
 
+        if (Utils.userList.get(i).getBalance() > Utils.productList.get(pos).getPrice()) {
+            // balance is greater than product price
+            if (Utils.productList.get(pos).getQuantity() > 0) {
+                // product quantity is available
+                // To Do
+                // descrease quantity and balance
 
-        dialoge();
+                updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId());
+
+            } else {
+                itemNotAvailableDialoge();
+            }
+        } else {
+            lowBalanceDialoge();
+        }
+
 
     }
 
-    public void dialoge(){
+    private void updateGoogleSheet(String productId, String userId) {
+        successfullyDialoge();
+    }
+
+    public void successfullyDialoge() {
         new AlertDialog.Builder(ScannerActivity.this)
                 .setTitle("Successfully")
                 .setMessage("Your Transation is completed")
@@ -192,7 +205,47 @@ public class ScannerActivity extends AppCompatActivity {
                     }
                 })
 
-                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setIcon(R.drawable.ic_baseline_check_circle_outline_24)
+                .show();
+    }
+
+    public void itemNotAvailableDialoge() {
+        new AlertDialog.Builder(ScannerActivity.this)
+                .setTitle("😥 Sorry")
+                .setMessage("Item Not Available")
+                .setCancelable(false)
+
+                // Specifying a listener allows you to take an action before dismissing the dialog.
+                // The dialog is automatically dismissed when a dialog button is clicked.
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
+                        finish();
+                    }
+                })
+
+                .setIcon(R.drawable.ic_baseline_do_disturb_24)
+                .show();
+    }
+
+    public void lowBalanceDialoge() {
+        new AlertDialog.Builder(ScannerActivity.this)
+                .setTitle("💰 Sorry")
+                .setMessage("Your Balance is Low")
+                .setCancelable(false)
+
+                // Specifying a listener allows you to take an action before dismissing the dialog.
+                // The dialog is automatically dismissed when a dialog button is clicked.
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
+                        finish();
+                    }
+                })
+
+                .setIcon(R.drawable.ic_baseline_attach_money_24)
                 .show();
     }
 
@@ -390,6 +443,7 @@ public class ScannerActivity extends AppCompatActivity {
             dialog = new ProgressDialog(ScannerActivity.this);
             dialog.setTitle("Please Wait..." + x);
             dialog.setMessage("I am getting your Data");
+            dialog.setCancelable(false);
             dialog.show();
         }
 
@@ -483,7 +537,7 @@ public class ScannerActivity extends AppCompatActivity {
              * Update ListView
              */
             if (Utils.userList.size() > 0) {
-                Log.d(TAG, "onPostExecute: "+Utils.userList.size());
+                Log.d(TAG, "onPostExecute: " + Utils.userList.size());
 //                adapter.notifyDataSetChanged();
 
             } else {
