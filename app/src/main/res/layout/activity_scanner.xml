@@ -266,7 +266,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_below="@id/labelFormat"
-                                android:inputType="text"
+                                android:inputType="textPassword"
                                 android:textSize="18sp"
                                 tools:visibility="visible" />
 

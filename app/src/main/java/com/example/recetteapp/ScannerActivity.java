@@ -173,7 +173,7 @@ public class ScannerActivity extends AppCompatActivity {
                 // To Do
                 // descrease quantity and balance
 
-                updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId());
+                updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
 
             } else {
                 itemNotAvailableDialoge();
@@ -185,7 +185,24 @@ public class ScannerActivity extends AppCompatActivity {
 
     }
 
-    private void updateGoogleSheet(String productId, String userId) {
+    private void updateGoogleSheet(String productId, String userId, int i) {
+
+        int quantity = Utils.productList.get(pos).getQuantity();
+        quantity = quantity-1;
+        int balance = Utils.userList.get(i).getBalance();
+        balance =  balance - Utils.productList.get(pos).getPrice();
+
+        insertData(quantity, balance, productId, userId);
+
+
+    }
+
+    private void insertData(int quantity, int balance, String productId, String userId) {
+
+        Log.d(TAG, "insertData: into Sheets: \n Quantity Remaining: "+quantity+"\n Balance Remaining: "+balance+" \n Product ID: "+productId+"\n User ID: "+userId);
+
+
+
         successfullyDialoge();
     }
 
