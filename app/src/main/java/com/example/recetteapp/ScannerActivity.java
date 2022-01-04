@@ -89,7 +89,7 @@ public class ScannerActivity extends AppCompatActivity {
 
     ImageView ivImage;
     TextView tvName, tvId, tvPrice, tvQuantity;
-    JSONObject postDataParams;
+    String userId, userBalance, productId, productQuantity;
 
 
     private static final SimpleDateFormat date = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
@@ -174,7 +174,7 @@ public class ScannerActivity extends AppCompatActivity {
                                 break;
                             }
                         }
-                        if (i==size-1){
+                        if (i == size - 1) {
                             Toast.makeText(ScannerActivity.this, "User Id OR Password not Match", Toast.LENGTH_SHORT).show();
                         }
 
@@ -208,32 +208,26 @@ public class ScannerActivity extends AppCompatActivity {
     private void updateGoogleSheet(String productId, String userId, int i) {
 
         int quantity = Integer.parseInt(Utils.productList.get(pos).getQuantity());
-        quantity = quantity-1;
+        quantity = quantity - 1;
         int balance = Integer.parseInt(Utils.userList.get(i).getBalance());
-        balance =  balance - Integer.parseInt(Utils.productList.get(pos).getPrice());
+        balance = balance - Integer.parseInt(Utils.productList.get(pos).getPrice());
 
         insertData(quantity, balance, productId, userId);
 
 
     }
 
-    private void insertData(int quantity, int balance, String productId, String userId) {
-
-        Log.d(TAG, "insertData: into Sheets: \n Quantity Remaining: "+quantity+"\n Balance Remaining: "+balance+" \n Product ID: "+productId+"\n User ID: "+userId);
+    private void insertData(int quantity, int balance, String pId, String uId) {
 
 
-        try {
-            postDataParams = new JSONObject();
-            postDataParams.put("id", ID);
-            postDataParams.put("userId", userId);
-            postDataParams.put("productId", productId);
-            postDataParams.put("remainAmount", String.valueOf(balance));
-            postDataParams.put("totalPiece", String.valueOf(quantity));
+        userId = uId;
+        userBalance =  String.valueOf(balance);
+        productId = pId;
+        productQuantity =  String.valueOf(quantity);
+        Log.d(TAG, "insertData: into Sheets: \n Quantity Remaining: " + productQuantity + "\n Balance Remaining: " + userBalance + " \n Product ID: " + productId + "\n User ID: " + userId);
 
-            new SendRequest().execute();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        new UpdateUserInfo().execute();
+        new UpdateProduct().execute();
 
     }
 
@@ -594,111 +588,102 @@ public class ScannerActivity extends AppCompatActivity {
         }
     }
 
-    public class SendRequest extends AsyncTask<String, Void, String> {
-        private ProgressDialog dialog;
 
+
+    class UpdateUserInfo extends AsyncTask<Void, Void, Void> {
+
+        ProgressDialog dialog;
+        int jIndex;
+        int x;
+
+        String result = null;
+
+
+        @Override
         protected void onPreExecute() {
+            super.onPreExecute();
+
             dialog = new ProgressDialog(ScannerActivity.this);
-            this.dialog.setMessage("Please Wait");
-            this.dialog.show();
+            dialog.setTitle("Hey Wait Please..." + x);
+            dialog.setMessage("I am getting your JSON");
+            dialog.show();
+
         }
 
-        protected String doInBackground(String... arg0) {
+        @Nullable
+        @Override
+        protected Void doInBackground(Void... params) {
+            JSONObject jsonObject = Controller.updateUserData(userId, userBalance);
+            Log.i(Controller.TAG, "Json obj ");
 
             try {
+                /**
+                 * Check Whether Its NULL???
+                 */
+                if (jsonObject != null) {
 
-                URL url = new URL(URL);
+                    result = jsonObject.getString("result");
 
-
-                Log.e("params", postDataParams.toString());
-
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setReadTimeout(15000);
-                conn.setConnectTimeout(15000);
-                conn.setRequestMethod("POST");
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-
-                OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-                writer.write(getPostDataString(postDataParams));
-
-                writer.flush();
-                writer.close();
-                os.close();
-
-                int responseCode = conn.getResponseCode();
-
-                if (responseCode == HttpsURLConnection.HTTP_OK) {
-
-                    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuffer sb = new StringBuffer("");
-                    String line = "";
-
-                    while ((line = in.readLine()) != null) {
-
-                        sb.append(line);
-                        break;
-                    }
-
-                    in.close();
-                    return sb.toString();
-
-                } else {
-                    return new String("false : " + responseCode);
                 }
-            } catch (Exception e) {
-                return new String("Exception: " + e.getMessage());
+            } catch (JSONException je) {
+                Log.i(Controller.TAG, "" + je.getLocalizedMessage());
             }
+            return null;
         }
 
         @Override
-        protected void onPostExecute(String result) {
-            if (dialog.isShowing()) {
-                dialog.dismiss();
-            }
-
-            if (result.equals("Success")){
-                runOnUiThread(new Runnable() // while debugging, it comes here, on Step Over it stick for 2 times and then move at the end of method without error
-                {
-                    public void run()
-                    {
-                        successfullyDialoge();
-                    }
-                });
-            }
-
-            Log.d(TAG, "onPostExecute: "+result);
-
-            Toast.makeText(getApplicationContext(), result,
-                    Toast.LENGTH_LONG).show();
-
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            dialog.dismiss();
         }
     }
 
-    public String getPostDataString(JSONObject params) throws Exception {
+    class UpdateProduct extends AsyncTask<Void, Void, Void> {
 
-        StringBuilder result = new StringBuilder();
-        boolean first = true;
+        ProgressDialog dialog;
+        int jIndex;
+        int x;
 
-        Iterator<String> itr = params.keys();
+        String result = null;
 
-        while (itr.hasNext()) {
 
-            String key = itr.next();
-            Object value = params.get(key);
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
 
-            if (first)
-                first = false;
-            else
-                result.append("&");
-
-            result.append(URLEncoder.encode(key, "UTF-8"));
-            result.append("=");
-            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+            dialog = new ProgressDialog(ScannerActivity.this);
+            dialog.setTitle("Hey Wait Please..." + x);
+            dialog.setMessage("I am getting your JSON");
+            dialog.show();
 
         }
-        return result.toString();
+
+        @Nullable
+        @Override
+        protected Void doInBackground(Void... params) {
+            JSONObject jsonObject = Controller.updateProductData(productId, productQuantity);
+            Log.i(Controller.TAG, "Json obj ");
+
+            try {
+                /**
+                 * Check Whether Its NULL???
+                 */
+                if (jsonObject != null) {
+
+                    result = jsonObject.getString("result");
+
+                }
+            } catch (JSONException je) {
+                Log.i(Controller.TAG, "" + je.getLocalizedMessage());
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            dialog.dismiss();
+        }
     }
 
 }
