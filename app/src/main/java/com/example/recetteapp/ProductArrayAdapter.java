@@ -52,8 +52,8 @@ public class ProductArrayAdapter extends ArrayAdapter<ProductModel> {
         Glide.with(context).load("https://drive.google.com/uc?export=view&id="+item.getImages()).into(vh.image); // for one drive images ....
 //        Glide.with(context).load(item.getImages()).into(vh.image);    // for other images
 
-        vh.price.setText(String.valueOf(item.getPrice()));
-        vh.quantity.setText(String.valueOf(item.getQuantity()));
+        vh.price.setText(item.getPrice());
+        vh.quantity.setText(item.getQuantity());
 
 
 

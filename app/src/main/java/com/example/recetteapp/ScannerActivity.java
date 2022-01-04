@@ -51,14 +51,29 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.EnumMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Map;
 
+import javax.net.ssl.HttpsURLConnection;
+
 public class ScannerActivity extends AppCompatActivity {
+
+
+    public static final String ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
+    public static final String URL = "https://script.google.com/macros/s/AKfycbxXToLY2WAola2BmtuXbo5YUXGL1GFW9vBuzjvZzuVLIi3PFfysXeUjTi9iiqp5KGvw/exec";
 
     private static final String TAG = "ScannerActivity";
     private TextView tvUserId;
@@ -74,6 +89,7 @@ public class ScannerActivity extends AppCompatActivity {
 
     ImageView ivImage;
     TextView tvName, tvId, tvPrice, tvQuantity;
+    JSONObject postDataParams;
 
 
     private static final SimpleDateFormat date = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
@@ -158,6 +174,10 @@ public class ScannerActivity extends AppCompatActivity {
                                 break;
                             }
                         }
+                        if (i==size-1){
+                            Toast.makeText(ScannerActivity.this, "User Id OR Password not Match", Toast.LENGTH_SHORT).show();
+                        }
+
                     }
                 }
             }
@@ -166,9 +186,9 @@ public class ScannerActivity extends AppCompatActivity {
 
     private void deductBalanceQuantity(int i) {
 
-        if (Utils.userList.get(i).getBalance() > Utils.productList.get(pos).getPrice()) {
+        if (Integer.parseInt(Utils.userList.get(i).getBalance()) > Integer.parseInt(Utils.productList.get(pos).getPrice())) {
             // balance is greater than product price
-            if (Utils.productList.get(pos).getQuantity() > 0) {
+            if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
                 // product quantity is available
                 // To Do
                 // descrease quantity and balance
@@ -187,10 +207,10 @@ public class ScannerActivity extends AppCompatActivity {
 
     private void updateGoogleSheet(String productId, String userId, int i) {
 
-        int quantity = Utils.productList.get(pos).getQuantity();
+        int quantity = Integer.parseInt(Utils.productList.get(pos).getQuantity());
         quantity = quantity-1;
-        int balance = Utils.userList.get(i).getBalance();
-        balance =  balance - Utils.productList.get(pos).getPrice();
+        int balance = Integer.parseInt(Utils.userList.get(i).getBalance());
+        balance =  balance - Integer.parseInt(Utils.productList.get(pos).getPrice());
 
         insertData(quantity, balance, productId, userId);
 
@@ -202,8 +222,19 @@ public class ScannerActivity extends AppCompatActivity {
         Log.d(TAG, "insertData: into Sheets: \n Quantity Remaining: "+quantity+"\n Balance Remaining: "+balance+" \n Product ID: "+productId+"\n User ID: "+userId);
 
 
+        try {
+            postDataParams = new JSONObject();
+            postDataParams.put("id", ID);
+            postDataParams.put("userId", userId);
+            postDataParams.put("productId", productId);
+            postDataParams.put("remainAmount", String.valueOf(balance));
+            postDataParams.put("totalPiece", String.valueOf(quantity));
 
-        successfullyDialoge();
+            new SendRequest().execute();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void successfullyDialoge() {
@@ -517,7 +548,7 @@ public class ScannerActivity extends AppCompatActivity {
                                 model.setName(innerObject.getString(Keys.KEY_EMPOLYEES_NAME));
                                 model.setEmail(innerObject.getString(Keys.KEY_EMPOLYEES_EMAIL));
                                 model.setPassword(innerObject.getString(Keys.KEY_EMPOLYEES_PASSWORD));
-                                model.setBalance(innerObject.getInt(Keys.KEY_EMPOLYEES_BALANCE));
+                                model.setBalance(innerObject.getString(Keys.KEY_EMPOLYEES_BALANCE));
 
 
                                 /**
@@ -561,6 +592,113 @@ public class ScannerActivity extends AppCompatActivity {
                 Toast.makeText(ScannerActivity.this, "No Data Found", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    public class SendRequest extends AsyncTask<String, Void, String> {
+        private ProgressDialog dialog;
+
+        protected void onPreExecute() {
+            dialog = new ProgressDialog(ScannerActivity.this);
+            this.dialog.setMessage("Please Wait");
+            this.dialog.show();
+        }
+
+        protected String doInBackground(String... arg0) {
+
+            try {
+
+                URL url = new URL(URL);
+
+
+                Log.e("params", postDataParams.toString());
+
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(15000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                writer.write(getPostDataString(postDataParams));
+
+                writer.flush();
+                writer.close();
+                os.close();
+
+                int responseCode = conn.getResponseCode();
+
+                if (responseCode == HttpsURLConnection.HTTP_OK) {
+
+                    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuffer sb = new StringBuffer("");
+                    String line = "";
+
+                    while ((line = in.readLine()) != null) {
+
+                        sb.append(line);
+                        break;
+                    }
+
+                    in.close();
+                    return sb.toString();
+
+                } else {
+                    return new String("false : " + responseCode);
+                }
+            } catch (Exception e) {
+                return new String("Exception: " + e.getMessage());
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            if (dialog.isShowing()) {
+                dialog.dismiss();
+            }
+
+            if (result.equals("Success")){
+                runOnUiThread(new Runnable() // while debugging, it comes here, on Step Over it stick for 2 times and then move at the end of method without error
+                {
+                    public void run()
+                    {
+                        successfullyDialoge();
+                    }
+                });
+            }
+
+            Log.d(TAG, "onPostExecute: "+result);
+
+            Toast.makeText(getApplicationContext(), result,
+                    Toast.LENGTH_LONG).show();
+
+        }
+    }
+
+    public String getPostDataString(JSONObject params) throws Exception {
+
+        StringBuilder result = new StringBuilder();
+        boolean first = true;
+
+        Iterator<String> itr = params.keys();
+
+        while (itr.hasNext()) {
+
+            String key = itr.next();
+            Object value = params.get(key);
+
+            if (first)
+                first = false;
+            else
+                result.append("&");
+
+            result.append(URLEncoder.encode(key, "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+
+        }
+        return result.toString();
     }
 
 }

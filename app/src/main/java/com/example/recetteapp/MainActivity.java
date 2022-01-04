@@ -161,8 +161,8 @@ public class MainActivity extends AppCompatActivity {
                                 model.setId(innerObject.getString(Keys.KEY_PRODUCTS_ID));
                                 model.setName(innerObject.getString(Keys.KEY_PRODUCTS_NAME));
                                 model.setImages(innerObject.getString(Keys.KEY_PRODUCTS_IMAGES));
-                                model.setPrice(innerObject.getInt(Keys.KEY_PRODUCTS_PRICE));
-                                model.setQuantity(innerObject.getInt(Keys.KEY_PRODUCTS_QUANTITY));
+                                model.setPrice(innerObject.getString(Keys.KEY_PRODUCTS_PRICE));
+                                model.setQuantity(innerObject.getString(Keys.KEY_PRODUCTS_QUANTITY));
 
 
                                 /**

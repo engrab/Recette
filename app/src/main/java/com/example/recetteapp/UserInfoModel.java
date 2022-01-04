@@ -10,12 +10,12 @@ public class UserInfoModel implements Parcelable {
     private String name;
     private String email;
     private String password;
-    private int balance;
+    private String balance;
 
     public UserInfoModel() {
     }
 
-    public UserInfoModel(String id, String name, String email, String password, int balance) {
+    public UserInfoModel(String id, String name, String email, String password, String balance) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -55,11 +55,11 @@ public class UserInfoModel implements Parcelable {
         this.password = password;
     }
 
-    public int getBalance() {
+    public String getBalance() {
         return balance;
     }
 
-    public void setBalance(int balance) {
+    public void setBalance(String balance) {
         this.balance = balance;
     }
 
@@ -74,7 +74,7 @@ public class UserInfoModel implements Parcelable {
         dest.writeString(this.name);
         dest.writeString(this.email);
         dest.writeString(this.password);
-        dest.writeInt(this.balance);
+        dest.writeString(this.balance);
     }
 
     public void readFromParcel(Parcel source) {
@@ -82,17 +82,15 @@ public class UserInfoModel implements Parcelable {
         this.name = source.readString();
         this.email = source.readString();
         this.password = source.readString();
-        this.balance = source.readInt();
+        this.balance = source.readString();
     }
-
-
 
     protected UserInfoModel(Parcel in) {
         this.id = in.readString();
         this.name = in.readString();
         this.email = in.readString();
         this.password = in.readString();
-        this.balance = in.readInt();
+        this.balance = in.readString();
     }
 
     public static final Parcelable.Creator<UserInfoModel> CREATOR = new Parcelable.Creator<UserInfoModel>() {
