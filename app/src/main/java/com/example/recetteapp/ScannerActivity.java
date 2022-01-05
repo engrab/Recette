@@ -33,8 +33,16 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.sheets.v4.Sheets;
+import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
+import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetResponse;
 import com.google.api.services.sheets.v4.model.BatchUpdateValuesRequest;
 import com.google.api.services.sheets.v4.model.BatchUpdateValuesResponse;
+import com.google.api.services.sheets.v4.model.CopyPasteRequest;
+import com.google.api.services.sheets.v4.model.GridRange;
+import com.google.api.services.sheets.v4.model.Request;
+import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
+import com.google.api.services.sheets.v4.model.UpdateSpreadsheetPropertiesRequest;
+import com.google.api.services.sheets.v4.model.UpdateValuesResponse;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
@@ -246,12 +254,14 @@ public class ScannerActivity extends AppCompatActivity {
         Thread thread = new Thread(){
             @Override
             public void run() {
+
                 try {
                     updateObject(userId, Keys.SHEET_EMPOLYEES, userBalance);
-//                    updateObject(productId, "products", productQuantity);
                 } catch (IOException | GeneralSecurityException e) {
                     e.printStackTrace();
                 }
+//                    updateObject(productId, "products", productQuantity);
+
             }
         };
         thread.start();
@@ -310,23 +320,76 @@ public class ScannerActivity extends AppCompatActivity {
         if (response != null) {
             rowIndex = this.getRowIndex(id, response);
             if (rowIndex != -1) {
-                List<ValueRange> oList = new ArrayList<>();
-                oList.add(new ValueRange().setRange("E" + rowIndex+2).setValues(Arrays.asList(
-                        Arrays.<Object>asList(data))));
-                Log.d(TAG, "updateObject: "+oList.get(0).get(0));
-
-                //... same for others properties of obj
-
-                BatchUpdateValuesRequest body = new BatchUpdateValuesRequest().setValueInputOption("RAW").setData(oList);
-                BatchUpdateValuesResponse batchResponse;
-                batchResponse =  sheetsService.spreadsheets().values().batchUpdate(ID, body).execute();
-                Log.d(TAG, "BatchResponse: "+batchResponse.getResponses());
+                Log.d(TAG, "updateObject: "+rowIndex);
+                whenUpdateSpreadSheetTitle_thenOk(rowIndex+2, data);
+//                List<ValueRange> oList = new ArrayList<>();
+//                oList.add(new ValueRange().setRange("E" + rowIndex+2).setValues(Arrays.asList(
+//                        Arrays.<Object>asList(data))));
+//                Log.d(TAG, "updateObject: "+oList.get(0).get(0));
+//
+//                //... same for others properties of obj
+//
+//                BatchUpdateValuesRequest body = new BatchUpdateValuesRequest().setValueInputOption("RAW").setData(oList);
+//                BatchUpdateValuesResponse batchResponse;
+//                batchResponse =  sheetsService.spreadsheets().values().batchUpdate(ID, body).execute();
+//                Log.d(TAG, "BatchResponse: "+batchResponse.getResponses());
             } else {
                 System.out.println("the obj dont exist in the sheet!");
             }
         }
 
 
+    }
+    public void whenUpdateSpreadSheetTitle_thenOk(int num, String data) throws IOException {
+
+        updateData();
+//        Log.d(TAG, "whenUpdateSpreadSheetTitle_thenOk: ");
+//        UpdateSpreadsheetPropertiesRequest updateSpreadSheetRequest
+//                = new UpdateSpreadsheetPropertiesRequest().setFields("*")
+//                .setProperties(new SpreadsheetProperties().setTitle("Expenses"));
+//
+//        CopyPasteRequest copyRequest = new CopyPasteRequest()
+//                .setSource(new GridRange().setSheetId(0)
+//                        .setStartColumnIndex(0).setEndColumnIndex(2)
+//                        .setStartRowIndex(0).setEndRowIndex(1))
+//                .setDestination(new GridRange().setSheetId(1)
+//                        .setStartColumnIndex(0).setEndColumnIndex(2)
+//                        .setStartRowIndex(0).setEndRowIndex(1))
+//                .setPasteType("PASTE_VALUES");
+//
+//        List<Request> requests = new ArrayList<>();
+//        requests.add(new Request()
+//                .setCopyPaste(copyRequest));
+//
+//        requests.add(new Request()
+//                .setUpdateSpreadsheetProperties(updateSpreadSheetRequest));
+//
+//        BatchUpdateSpreadsheetRequest body
+//                = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+//
+//        BatchUpdateSpreadsheetResponse execute = sheetsService.spreadsheets().batchUpdate(ID, body).execute();
+//
+//        Log.d(TAG, "Spread Sheet ID: "+execute.getSpreadsheetId());
+//
+//        runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                successfullyDialoge();
+//            }
+//        });
+    }
+
+    private void updateData() {
+        ValueRange body = new ValueRange()
+                .setValues(Arrays.asList(Arrays.asList("updated")));
+        try {
+            UpdateValuesResponse result = sheetsService.spreadsheets().values()
+                    .update(ID, "A5", body)
+                    .setValueInputOption("RAW")
+                    .execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void successfullyDialoge() {
