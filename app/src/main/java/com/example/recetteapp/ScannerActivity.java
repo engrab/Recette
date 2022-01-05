@@ -26,6 +26,16 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.sheets.v4.Sheets;
+import com.google.api.services.sheets.v4.model.BatchUpdateValuesRequest;
+import com.google.api.services.sheets.v4.model.BatchUpdateValuesResponse;
+import com.google.api.services.sheets.v4.model.ValueRange;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.ChecksumException;
@@ -54,6 +64,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -61,10 +72,14 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -73,6 +88,7 @@ public class ScannerActivity extends AppCompatActivity {
 
 
     public static final String ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
+    public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
     public static final String URL = "https://script.google.com/macros/s/AKfycbxXToLY2WAola2BmtuXbo5YUXGL1GFW9vBuzjvZzuVLIi3PFfysXeUjTi9iiqp5KGvw/exec";
 
     private static final String TAG = "ScannerActivity";
@@ -90,6 +106,7 @@ public class ScannerActivity extends AppCompatActivity {
     ImageView ivImage;
     TextView tvName, tvId, tvPrice, tvQuantity;
     String userId, userBalance, productId, productQuantity;
+    Sheets sheetsService = null;
 
 
     private static final SimpleDateFormat date = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
@@ -226,8 +243,89 @@ public class ScannerActivity extends AppCompatActivity {
         productQuantity =  String.valueOf(quantity);
         Log.d(TAG, "insertData: into Sheets: \n Quantity Remaining: " + productQuantity + "\n Balance Remaining: " + userBalance + " \n Product ID: " + productId + "\n User ID: " + userId);
 
-        new UpdateUserInfo().execute();
-        new UpdateProduct().execute();
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+                try {
+                    updateObject(userId, Keys.SHEET_EMPOLYEES, userBalance);
+//                    updateObject(productId, "products", productQuantity);
+                } catch (IOException | GeneralSecurityException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        thread.start();
+
+//        new UpdateUserInfo().execute();
+//        new UpdateProduct().execute();
+
+    }
+    private int getRowIndex(String id, ValueRange response) {
+        List<List<Object>> values = response.getValues();
+        Log.d(TAG, "getRowIndex: "+values.get(0).get(0));
+        int rowIndex = -1;
+
+        if (values != null) {
+
+            for (int j = 0; j<response.getValues().size()-1; j++){
+
+                if (values.get(j).get(0).equals(id)) {
+                    Log.d(TAG, "There is a match! i= "+j);
+                    rowIndex = j;
+                }
+            }
+        }
+
+        return rowIndex;
+    }
+
+    public void updateObject(String id, String sheetName, String data) throws IOException, GeneralSecurityException {
+
+        HttpTransport transport = AndroidHttp.newCompatibleTransport();
+        JsonFactory factory = JacksonFactory.getDefaultInstance();
+
+        sheetsService = new Sheets.Builder(transport, factory, null)
+                .setApplicationName(getString(R.string.app_name))
+                .build();
+
+        ValueRange response = null;
+        int numCol = -1;
+
+        try {
+            response = sheetsService.spreadsheets().values()
+                    .get(ID, sheetName+"!A2:A1000")
+                    .setKey(GOOGLE_API_KEY)
+                    .execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (response != null) {
+
+            numCol = response.getValues() != null ? response.getValues().size() : 0;
+        }
+        Log.d(TAG, "ValueRange: "+numCol);
+
+        int rowIndex = 0;
+
+        if (response != null) {
+            rowIndex = this.getRowIndex(id, response);
+            if (rowIndex != -1) {
+                List<ValueRange> oList = new ArrayList<>();
+                oList.add(new ValueRange().setRange("E" + rowIndex+2).setValues(Arrays.asList(
+                        Arrays.<Object>asList(data))));
+                Log.d(TAG, "updateObject: "+oList.get(0).get(0));
+
+                //... same for others properties of obj
+
+                BatchUpdateValuesRequest body = new BatchUpdateValuesRequest().setValueInputOption("RAW").setData(oList);
+                BatchUpdateValuesResponse batchResponse;
+                batchResponse =  sheetsService.spreadsheets().values().batchUpdate(ID, body).execute();
+                Log.d(TAG, "BatchResponse: "+batchResponse.getResponses());
+            } else {
+                System.out.println("the obj dont exist in the sheet!");
+            }
+        }
+
 
     }
 
@@ -590,100 +688,100 @@ public class ScannerActivity extends AppCompatActivity {
 
 
 
-    class UpdateUserInfo extends AsyncTask<Void, Void, Void> {
-
-        ProgressDialog dialog;
-        int jIndex;
-        int x;
-
-        String result = null;
-
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            dialog = new ProgressDialog(ScannerActivity.this);
-            dialog.setTitle("Hey Wait Please..." + x);
-            dialog.setMessage("I am getting your JSON");
-            dialog.show();
-
-        }
-
-        @Nullable
-        @Override
-        protected Void doInBackground(Void... params) {
-            JSONObject jsonObject = Controller.updateUserData(userId, userBalance);
-            Log.i(Controller.TAG, "Json obj ");
-
-            try {
-                /**
-                 * Check Whether Its NULL???
-                 */
-                if (jsonObject != null) {
-
-                    result = jsonObject.getString("result");
-
-                }
-            } catch (JSONException je) {
-                Log.i(Controller.TAG, "" + je.getLocalizedMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            dialog.dismiss();
-        }
-    }
-
-    class UpdateProduct extends AsyncTask<Void, Void, Void> {
-
-        ProgressDialog dialog;
-        int jIndex;
-        int x;
-
-        String result = null;
-
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            dialog = new ProgressDialog(ScannerActivity.this);
-            dialog.setTitle("Hey Wait Please..." + x);
-            dialog.setMessage("I am getting your JSON");
-            dialog.show();
-
-        }
-
-        @Nullable
-        @Override
-        protected Void doInBackground(Void... params) {
-            JSONObject jsonObject = Controller.updateProductData(productId, productQuantity);
-            Log.i(Controller.TAG, "Json obj ");
-
-            try {
-                /**
-                 * Check Whether Its NULL???
-                 */
-                if (jsonObject != null) {
-
-                    result = jsonObject.getString("result");
-
-                }
-            } catch (JSONException je) {
-                Log.i(Controller.TAG, "" + je.getLocalizedMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            dialog.dismiss();
-        }
-    }
+//    class UpdateUserInfo extends AsyncTask<Void, Void, Void> {
+//
+//        ProgressDialog dialog;
+//        int jIndex;
+//        int x;
+//
+//        String result = null;
+//
+//
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//
+//            dialog = new ProgressDialog(ScannerActivity.this);
+//            dialog.setTitle("Hey Wait Please..." + x);
+//            dialog.setMessage("I am getting your JSON");
+//            dialog.show();
+//
+//        }
+//
+//        @Nullable
+//        @Override
+//        protected Void doInBackground(Void... params) {
+//            JSONObject jsonObject = Controller.updateUserData(userId, userBalance);
+//            Log.i(Controller.TAG, "Json obj ");
+//
+//            try {
+//                /**
+//                 * Check Whether Its NULL???
+//                 */
+//                if (jsonObject != null) {
+//
+//                    result = jsonObject.getString("result");
+//
+//                }
+//            } catch (JSONException je) {
+//                Log.i(Controller.TAG, "" + je.getLocalizedMessage());
+//            }
+//            return null;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(Void aVoid) {
+//            super.onPostExecute(aVoid);
+//            dialog.dismiss();
+//        }
+//    }
+//
+//    class UpdateProduct extends AsyncTask<Void, Void, Void> {
+//
+//        ProgressDialog dialog;
+//        int jIndex;
+//        int x;
+//
+//        String result = null;
+//
+//
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//
+//            dialog = new ProgressDialog(ScannerActivity.this);
+//            dialog.setTitle("Hey Wait Please..." + x);
+//            dialog.setMessage("I am getting your JSON");
+//            dialog.show();
+//
+//        }
+//
+//        @Nullable
+//        @Override
+//        protected Void doInBackground(Void... params) {
+//            JSONObject jsonObject = Controller.updateProductData(productId, productQuantity);
+//            Log.i(Controller.TAG, "Json obj ");
+//
+//            try {
+//                /**
+//                 * Check Whether Its NULL???
+//                 */
+//                if (jsonObject != null) {
+//
+//                    result = jsonObject.getString("result");
+//
+//                }
+//            } catch (JSONException je) {
+//                Log.i(Controller.TAG, "" + je.getLocalizedMessage());
+//            }
+//            return null;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(Void aVoid) {
+//            super.onPostExecute(aVoid);
+//            dialog.dismiss();
+//        }
+//    }
 
 }
