@@ -1,16 +1,25 @@
 package com.example.recetteapp;
 
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -24,24 +33,14 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.bumptech.glide.Glide;
 import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.sheets.v4.Sheets;
-import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
-import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetResponse;
-import com.google.api.services.sheets.v4.model.BatchUpdateValuesRequest;
-import com.google.api.services.sheets.v4.model.BatchUpdateValuesResponse;
-import com.google.api.services.sheets.v4.model.CopyPasteRequest;
-import com.google.api.services.sheets.v4.model.GridRange;
-import com.google.api.services.sheets.v4.model.Request;
-import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
-import com.google.api.services.sheets.v4.model.UpdateSpreadsheetPropertiesRequest;
 import com.google.api.services.sheets.v4.model.UpdateValuesResponse;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.google.zxing.BarcodeFormat;
@@ -71,7 +70,9 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -82,8 +83,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -97,9 +99,10 @@ public class ScannerActivity extends AppCompatActivity {
 
     public static final String ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
     public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
-    public static final String URL = "https://script.google.com/macros/s/AKfycbxXToLY2WAola2BmtuXbo5YUXGL1GFW9vBuzjvZzuVLIi3PFfysXeUjTi9iiqp5KGvw/exec";
-
+    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOpgUbXqxL17qdJ6fS8a9MyB_5U7oS93Sa_2FOJwC32ASPz5nIiCIE-zaoNe6D_juA/exec";
+    JSONObject postDataParams;
     private static final String TAG = "ScannerActivity";
+    private static final int REQUEST_CODE_STORAGE = 100;
     private TextView tvUserId;
     private EditText password;
     private TextView mLabelFormat;
@@ -246,12 +249,12 @@ public class ScannerActivity extends AppCompatActivity {
 
 
         userId = uId;
-        userBalance =  String.valueOf(balance);
+        userBalance = String.valueOf(balance);
         productId = pId;
-        productQuantity =  String.valueOf(quantity);
+        productQuantity = String.valueOf(quantity);
         Log.d(TAG, "insertData: into Sheets: \n Quantity Remaining: " + productQuantity + "\n Balance Remaining: " + userBalance + " \n Product ID: " + productId + "\n User ID: " + userId);
 
-        Thread thread = new Thread(){
+        Thread thread = new Thread() {
             @Override
             public void run() {
 
@@ -270,17 +273,18 @@ public class ScannerActivity extends AppCompatActivity {
 //        new UpdateProduct().execute();
 
     }
+
     private int getRowIndex(String id, ValueRange response) {
         List<List<Object>> values = response.getValues();
-        Log.d(TAG, "getRowIndex: "+values.get(0).get(0));
+        Log.d(TAG, "getRowIndex: " + values.get(0).get(0));
         int rowIndex = -1;
 
         if (values != null) {
 
-            for (int j = 0; j<response.getValues().size()-1; j++){
+            for (int j = 0; j < response.getValues().size() - 1; j++) {
 
                 if (values.get(j).get(0).equals(id)) {
-                    Log.d(TAG, "There is a match! i= "+j);
+                    Log.d(TAG, "There is a match! i= " + j);
                     rowIndex = j;
                 }
             }
@@ -303,7 +307,7 @@ public class ScannerActivity extends AppCompatActivity {
 
         try {
             response = sheetsService.spreadsheets().values()
-                    .get(ID, sheetName+"!A2:A1000")
+                    .get(ID, sheetName + "!A2:A1000")
                     .setKey(GOOGLE_API_KEY)
                     .execute();
         } catch (IOException e) {
@@ -313,15 +317,26 @@ public class ScannerActivity extends AppCompatActivity {
 
             numCol = response.getValues() != null ? response.getValues().size() : 0;
         }
-        Log.d(TAG, "ValueRange: "+numCol);
+        Log.d(TAG, "ValueRange: " + numCol);
 
         int rowIndex = 0;
 
         if (response != null) {
             rowIndex = this.getRowIndex(id, response);
             if (rowIndex != -1) {
-                Log.d(TAG, "updateObject: "+rowIndex);
-                whenUpdateSpreadSheetTitle_thenOk(rowIndex+2, data);
+                Log.d(TAG, "updateObject: " + rowIndex);
+
+                int finalRowIndex = rowIndex;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setDataIntoJson(finalRowIndex + 2, data);
+                    }
+                });
+
+
+//                whenUpdateSpreadSheetTitle_thenOk(rowIndex+2, data);
+
 //                List<ValueRange> oList = new ArrayList<>();
 //                oList.add(new ValueRange().setRange("E" + rowIndex+2).setValues(Arrays.asList(
 //                        Arrays.<Object>asList(data))));
@@ -340,6 +355,7 @@ public class ScannerActivity extends AppCompatActivity {
 
 
     }
+
     public void whenUpdateSpreadSheetTitle_thenOk(int num, String data) throws IOException {
 
         updateData();
@@ -403,6 +419,7 @@ public class ScannerActivity extends AppCompatActivity {
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
 
+                        isStoragePermissionGranted();
                         startActivity(new Intent(ScannerActivity.this, MainActivity.class));
                         finish();
                     }
@@ -410,6 +427,30 @@ public class ScannerActivity extends AppCompatActivity {
 
                 .setIcon(R.drawable.ic_baseline_check_circle_outline_24)
                 .show();
+    }
+
+    public boolean isStoragePermissionGranted() {
+        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
+            Log.v(TAG, "Permission is granted");
+            createPdf();
+            return true;
+        } else {
+
+            Log.v(TAG, "Permission is revoked");
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            return false;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
+            //resume tasks needing this permission
+            createPdf();
+        }
     }
 
     public void itemNotAvailableDialoge() {
@@ -750,101 +791,229 @@ public class ScannerActivity extends AppCompatActivity {
     }
 
 
+    public void setDataIntoJson(int rowNumber, String data) {
+        postDataParams = new JSONObject();
+        try {
 
-//    class UpdateUserInfo extends AsyncTask<Void, Void, Void> {
-//
-//        ProgressDialog dialog;
-//        int jIndex;
-//        int x;
-//
-//        String result = null;
-//
-//
-//        @Override
-//        protected void onPreExecute() {
-//            super.onPreExecute();
-//
-//            dialog = new ProgressDialog(ScannerActivity.this);
-//            dialog.setTitle("Hey Wait Please..." + x);
-//            dialog.setMessage("I am getting your JSON");
-//            dialog.show();
-//
-//        }
-//
-//        @Nullable
-//        @Override
-//        protected Void doInBackground(Void... params) {
-//            JSONObject jsonObject = Controller.updateUserData(userId, userBalance);
-//            Log.i(Controller.TAG, "Json obj ");
-//
-//            try {
-//                /**
-//                 * Check Whether Its NULL???
-//                 */
-//                if (jsonObject != null) {
-//
-//                    result = jsonObject.getString("result");
-//
-//                }
-//            } catch (JSONException je) {
-//                Log.i(Controller.TAG, "" + je.getLocalizedMessage());
-//            }
-//            return null;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(Void aVoid) {
-//            super.onPostExecute(aVoid);
-//            dialog.dismiss();
-//        }
-//    }
-//
-//    class UpdateProduct extends AsyncTask<Void, Void, Void> {
-//
-//        ProgressDialog dialog;
-//        int jIndex;
-//        int x;
-//
-//        String result = null;
-//
-//
-//        @Override
-//        protected void onPreExecute() {
-//            super.onPreExecute();
-//
-//            dialog = new ProgressDialog(ScannerActivity.this);
-//            dialog.setTitle("Hey Wait Please..." + x);
-//            dialog.setMessage("I am getting your JSON");
-//            dialog.show();
-//
-//        }
-//
-//        @Nullable
-//        @Override
-//        protected Void doInBackground(Void... params) {
-//            JSONObject jsonObject = Controller.updateProductData(productId, productQuantity);
-//            Log.i(Controller.TAG, "Json obj ");
-//
-//            try {
-//                /**
-//                 * Check Whether Its NULL???
-//                 */
-//                if (jsonObject != null) {
-//
-//                    result = jsonObject.getString("result");
-//
-//                }
-//            } catch (JSONException je) {
-//                Log.i(Controller.TAG, "" + je.getLocalizedMessage());
-//            }
-//            return null;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(Void aVoid) {
-//            super.onPostExecute(aVoid);
-//            dialog.dismiss();
-//        }
-//    }
+            postDataParams.put("rowNumber", rowNumber);
+            postDataParams.put("data", data);
+
+            new SendRequest().execute();
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public class SendRequest extends AsyncTask<String, Void, String> {
+        private ProgressDialog dialog;
+
+        protected void onPreExecute() {
+            dialog = new ProgressDialog(ScannerActivity.this);
+            this.dialog.setMessage("Please Wait");
+            this.dialog.show();
+        }
+
+        protected String doInBackground(String... arg0) {
+
+            try {
+
+                URL url = new URL(SCRIPT_URL);
+
+
+                Log.e("params", postDataParams.toString());
+
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(15000);
+                conn.setConnectTimeout(15000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                String postDataString = getPostDataString(postDataParams);
+                Log.d(TAG, "doInBackground: " + postDataString);
+                writer.write(postDataString);
+
+                writer.flush();
+                writer.close();
+                os.close();
+
+                int responseCode = conn.getResponseCode();
+
+                if (responseCode == HttpsURLConnection.HTTP_OK) {
+
+                    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuffer sb = new StringBuffer("");
+                    String line = "";
+
+                    while ((line = in.readLine()) != null) {
+
+                        sb.append(line);
+                        break;
+                    }
+
+                    in.close();
+                    return sb.toString();
+
+                } else {
+                    return new String("false : " + responseCode);
+                }
+            } catch (Exception e) {
+                return new String("Exception: " + e.getMessage());
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            if (dialog.isShowing()) {
+                dialog.dismiss();
+                successfullyDialoge();
+                Log.d(TAG, "onPostExecute: " + result);
+            }
+
+
+        }
+    }
+
+    public String getPostDataString(JSONObject params) throws Exception {
+
+        StringBuilder result = new StringBuilder();
+        boolean first = true;
+
+        Iterator<String> itr = params.keys();
+
+        while (itr.hasNext()) {
+
+            String key = itr.next();
+            Object value = params.get(key);
+
+            if (first)
+                first = false;
+            else
+                result.append("&");
+
+            result.append(URLEncoder.encode(key, "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+
+        }
+        return result.toString();
+    }
+
+    private void createPdf() {
+        ActivityCompat.requestPermissions(ScannerActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE_STORAGE);
+
+        float pageWidth = 1200;
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_pizza);
+        Bitmap scalBitmap = Bitmap.createScaledBitmap(bitmap, 1200, 518, false);
+
+        PdfDocument pdfDocument = new PdfDocument();
+        Paint paint = new Paint();
+        Paint titlePaint = new Paint();
+
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(1200, 2010, 1).create();
+        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+
+// add image
+        canvas.drawBitmap(scalBitmap, 0, 0, paint);
+
+        // add name of pizza
+        titlePaint.setTextAlign(Paint.Align.CENTER);
+        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        titlePaint.setTextSize(70);
+        canvas.drawText("Diamend Pizza", pageWidth / 2, 270, titlePaint);
+
+// add invoice title
+
+        titlePaint.setTextAlign(Paint.Align.CENTER);
+        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.ITALIC));
+        titlePaint.setTextSize(70);
+        canvas.drawText("INVOICE", pageWidth / 2, 500, titlePaint);
+
+        // date and time
+        paint.setTextAlign(Paint.Align.RIGHT);
+        Date date = new Date();
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy");
+        canvas.drawText("Date: " + simpleDateFormat.format(date), pageWidth - 20, 640, paint);
+        SimpleDateFormat simpleTimeFormat = new SimpleDateFormat("HH:mm:ss");
+        canvas.drawText("Time: " + simpleTimeFormat.format(date), pageWidth - 20, 700, paint);
+
+        // draw rectangle
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        canvas.drawRect(20, 780, pageWidth - 20, 860, paint);
+
+        paint.setTextAlign(Paint.Align.LEFT);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawText("Sir. No. ", 40, 830, paint);
+        canvas.drawText("Item Description", 200, 830, paint);
+        canvas.drawText("Price ", 700, 830, paint);
+        canvas.drawText("Qty.", 900, 830, paint);
+        canvas.drawText("Total", 1050, 830, paint);
+
+        canvas.drawLine(180, 790, 180, 840, paint);
+        canvas.drawLine(680, 790, 680, 840, paint);
+        canvas.drawLine(880, 790, 880, 840, paint);
+        canvas.drawLine(1030, 790, 1030, 840, paint);
+
+
+        // draw qty prices etc...
+        canvas.drawText("1", 40, 950, paint);
+        canvas.drawText("Pizza head", 200, 950, paint);
+        canvas.drawText("200", 700, 950, paint);
+        canvas.drawText("2", 900, 950, paint);
+        paint.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText("200.00", pageWidth - 40, 950, paint);
+
+        paint.setColor(Color.rgb(247, 147, 30));
+        canvas.drawRect(680, 1350, pageWidth - 20, 1450, paint);
+
+        paint.setColor(Color.BLACK);
+        paint.setTextSize(50f);
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.drawText("Total", 700, 1415, paint);
+        paint.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText("200", pageWidth - 40, 1415, paint);
+
+        pdfDocument.finishPage(page);
+
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.getTimeInMillis();
+        String path = Environment.getExternalStorageDirectory() + "/" + getString(R.string.app_name);
+        String fileName = calendar.getTimeInMillis() + ".pdf";
+        File file = new File(path, fileName);
+        try {
+            pdfDocument.writeTo(new FileOutputStream(file));
+            viewPdf(fileName, getString(R.string.app_name));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        pdfDocument.close();
+
+
+    }
+
+    // Method for opening a pdf file
+    private void viewPdf(String file, String directory) {
+
+        File pdfFile = new File(Environment.getExternalStorageDirectory() + "/" + directory + "/" + file);
+        Uri path = Uri.fromFile(pdfFile);
+
+        // Setting the intent for pdf reader
+        Intent pdfIntent = new Intent(Intent.ACTION_VIEW);
+        pdfIntent.setDataAndType(path, "application/pdf");
+        pdfIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        try {
+            startActivity(pdfIntent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(ScannerActivity.this, "Can't read pdf file", Toast.LENGTH_SHORT).show();
+        }
+    }
 
 }
