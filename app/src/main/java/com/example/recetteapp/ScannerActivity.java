@@ -34,6 +34,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.FileProvider;
 
 import com.bumptech.glide.Glide;
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -41,7 +42,6 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.sheets.v4.Sheets;
-import com.google.api.services.sheets.v4.model.UpdateValuesResponse;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
@@ -83,7 +83,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumMap;
@@ -97,9 +96,9 @@ import javax.net.ssl.HttpsURLConnection;
 public class ScannerActivity extends AppCompatActivity {
 
 
-    public static final String ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
     public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
-    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOpgUbXqxL17qdJ6fS8a9MyB_5U7oS93Sa_2FOJwC32ASPz5nIiCIE-zaoNe6D_juA/exec";
+    public static final String SHEET_ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
+    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWb0im6sCobT5tTxnJR6Vjb8FeqkrTHMYoxU3JY8C5A93smgOyFnyXrCb14Lckziql/exec";
     JSONObject postDataParams;
     private static final String TAG = "ScannerActivity";
     private static final int REQUEST_CODE_STORAGE = 100;
@@ -116,8 +115,15 @@ public class ScannerActivity extends AppCompatActivity {
 
     ImageView ivImage;
     TextView tvName, tvId, tvPrice, tvQuantity;
-    String userId, userBalance, productId, productQuantity;
+    String userId;
+    int userBalance;
+    String productId;
+    int productQuantity;
     Sheets sheetsService = null;
+
+    String finalUserId, finalProductId;
+    int finalBalance, finalQuantity;
+    int finalRowUserNumber, finalRowProductNumber;
 
 
     private static final SimpleDateFormat date = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
@@ -249,9 +255,9 @@ public class ScannerActivity extends AppCompatActivity {
 
 
         userId = uId;
-        userBalance = String.valueOf(balance);
+        userBalance = balance;
         productId = pId;
-        productQuantity = String.valueOf(quantity);
+        productQuantity = quantity;
         Log.d(TAG, "insertData: into Sheets: \n Quantity Remaining: " + productQuantity + "\n Balance Remaining: " + userBalance + " \n Product ID: " + productId + "\n User ID: " + userId);
 
         Thread thread = new Thread() {
@@ -259,19 +265,15 @@ public class ScannerActivity extends AppCompatActivity {
             public void run() {
 
                 try {
-                    updateObject(userId, Keys.SHEET_EMPOLYEES, userBalance);
+                    updateBalance(userId, Keys.SHEET_EMPOLYEES, userBalance);
+
                 } catch (IOException | GeneralSecurityException e) {
                     e.printStackTrace();
                 }
-//                    updateObject(productId, "products", productQuantity);
 
             }
         };
         thread.start();
-
-//        new UpdateUserInfo().execute();
-//        new UpdateProduct().execute();
-
     }
 
     private int getRowIndex(String id, ValueRange response) {
@@ -292,8 +294,26 @@ public class ScannerActivity extends AppCompatActivity {
 
         return rowIndex;
     }
+    private int getRowProdcutIndex(String id, ValueRange response) {
+        List<List<Object>> values = response.getValues();
+        Log.d(TAG, "getRowIndex: " + values.get(0).get(0));
+        int rowIndex = -1;
 
-    public void updateObject(String id, String sheetName, String data) throws IOException, GeneralSecurityException {
+        if (values != null) {
+
+            for (int j = 0; j < response.getValues().size() - 1; j++) {
+
+                if (values.get(j).get(0).equals(id)) {
+                    Log.d(TAG, "There is a match! i= " + j);
+                    rowIndex = j;
+                }
+            }
+        }
+
+        return rowIndex;
+    }
+
+    public void updateBalance(String id, String sheetName, int balance) throws IOException, GeneralSecurityException {
 
         HttpTransport transport = AndroidHttp.newCompatibleTransport();
         JsonFactory factory = JacksonFactory.getDefaultInstance();
@@ -307,7 +327,53 @@ public class ScannerActivity extends AppCompatActivity {
 
         try {
             response = sheetsService.spreadsheets().values()
-                    .get(ID, sheetName + "!A2:A1000")
+                    .get(SHEET_ID, sheetName + "!A2:A1000")
+                    .setKey(GOOGLE_API_KEY)
+                    .execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (response != null) {
+
+            numCol = response.getValues() != null ? response.getValues().size() : 0;
+        }
+        Log.d(TAG, "ValueRange: " + numCol);
+
+        int rowIndex = -1;
+
+        if (response != null) {
+            rowIndex = this.getRowIndex(id, response);
+            if (rowIndex != -1) {
+                Log.d(TAG, "updateObject: " + rowIndex);
+
+                finalRowUserNumber = rowIndex + 2;
+                finalBalance = balance;
+                updateQuantity(productId, Keys.SHEET_PRODUCTS, productQuantity);
+
+            } else {
+                Log.d(TAG, "updateBalance: the obj dont exist in the sheet!");
+
+            }
+        }
+
+
+    }
+
+    public void updateQuantity(String id, String sheetName, int quantity) throws IOException, GeneralSecurityException {
+
+        HttpTransport transport = AndroidHttp.newCompatibleTransport();
+        JsonFactory factory = JacksonFactory.getDefaultInstance();
+
+        sheetsService = new Sheets.Builder(transport, factory, null)
+                .setApplicationName(getString(R.string.app_name))
+                .build();
+
+        ValueRange response = null;
+        int numCol = -1;
+
+        try {
+            response = sheetsService.spreadsheets().values()
+                    .get(SHEET_ID, sheetName + "!A2:A1000")
                     .setKey(GOOGLE_API_KEY)
                     .execute();
         } catch (IOException e) {
@@ -322,91 +388,39 @@ public class ScannerActivity extends AppCompatActivity {
         int rowIndex = 0;
 
         if (response != null) {
-            rowIndex = this.getRowIndex(id, response);
-            if (rowIndex != -1) {
-                Log.d(TAG, "updateObject: " + rowIndex);
 
-                int finalRowIndex = rowIndex;
-                runOnUiThread(new Runnable() {
+            runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        setDataIntoJson(finalRowIndex + 2, data);
+                        finalRowProductNumber = Integer.parseInt(Utils.productList.get(pos).getId())+1;
+                        finalQuantity = quantity;
+                        setDataIntoJson();
                     }
                 });
-
-
-//                whenUpdateSpreadSheetTitle_thenOk(rowIndex+2, data);
-
-//                List<ValueRange> oList = new ArrayList<>();
-//                oList.add(new ValueRange().setRange("E" + rowIndex+2).setValues(Arrays.asList(
-//                        Arrays.<Object>asList(data))));
-//                Log.d(TAG, "updateObject: "+oList.get(0).get(0));
+//            rowIndex = this.getRowProdcutIndex(id, response);
+//            if (rowIndex != -1) {
+//                Log.d(TAG, "updateObject: " + rowIndex);
 //
-//                //... same for others properties of obj
 //
-//                BatchUpdateValuesRequest body = new BatchUpdateValuesRequest().setValueInputOption("RAW").setData(oList);
-//                BatchUpdateValuesResponse batchResponse;
-//                batchResponse =  sheetsService.spreadsheets().values().batchUpdate(ID, body).execute();
-//                Log.d(TAG, "BatchResponse: "+batchResponse.getResponses());
-            } else {
-                System.out.println("the obj dont exist in the sheet!");
-            }
-        }
-
-
-    }
-
-    public void whenUpdateSpreadSheetTitle_thenOk(int num, String data) throws IOException {
-
-        updateData();
-//        Log.d(TAG, "whenUpdateSpreadSheetTitle_thenOk: ");
-//        UpdateSpreadsheetPropertiesRequest updateSpreadSheetRequest
-//                = new UpdateSpreadsheetPropertiesRequest().setFields("*")
-//                .setProperties(new SpreadsheetProperties().setTitle("Expenses"));
+//                int finalRowIndex = rowIndex;
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        finalRowProductNumber = finalRowIndex + 2;
+//                        finalQuantity = quantity;
+//                        setDataIntoJson();
+//                    }
+//                });
 //
-//        CopyPasteRequest copyRequest = new CopyPasteRequest()
-//                .setSource(new GridRange().setSheetId(0)
-//                        .setStartColumnIndex(0).setEndColumnIndex(2)
-//                        .setStartRowIndex(0).setEndRowIndex(1))
-//                .setDestination(new GridRange().setSheetId(1)
-//                        .setStartColumnIndex(0).setEndColumnIndex(2)
-//                        .setStartRowIndex(0).setEndRowIndex(1))
-//                .setPasteType("PASTE_VALUES");
 //
-//        List<Request> requests = new ArrayList<>();
-//        requests.add(new Request()
-//                .setCopyPaste(copyRequest));
-//
-//        requests.add(new Request()
-//                .setUpdateSpreadsheetProperties(updateSpreadSheetRequest));
-//
-//        BatchUpdateSpreadsheetRequest body
-//                = new BatchUpdateSpreadsheetRequest().setRequests(requests);
-//
-//        BatchUpdateSpreadsheetResponse execute = sheetsService.spreadsheets().batchUpdate(ID, body).execute();
-//
-//        Log.d(TAG, "Spread Sheet ID: "+execute.getSpreadsheetId());
-//
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                successfullyDialoge();
+//            } else {
+//                Log.d(TAG, "updateQuantity: the obj dont exist in the sheet!");
 //            }
-//        });
+        }
+
+
     }
 
-    private void updateData() {
-        ValueRange body = new ValueRange()
-                .setValues(Arrays.asList(Arrays.asList("updated")));
-        try {
-            UpdateValuesResponse result = sheetsService.spreadsheets().values()
-                    .update(ID, "A5", body)
-                    .setValueInputOption("RAW")
-                    .execute();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public void successfullyDialoge() {
         new AlertDialog.Builder(ScannerActivity.this)
@@ -420,8 +434,8 @@ public class ScannerActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
 
                         isStoragePermissionGranted();
-                        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
-                        finish();
+//                        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
+//                        finish();
                     }
                 })
 
@@ -449,7 +463,6 @@ public class ScannerActivity extends AppCompatActivity {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
             //resume tasks needing this permission
-            createPdf();
         }
     }
 
@@ -791,12 +804,15 @@ public class ScannerActivity extends AppCompatActivity {
     }
 
 
-    public void setDataIntoJson(int rowNumber, String data) {
+    public void setDataIntoJson() {
         postDataParams = new JSONObject();
         try {
 
-            postDataParams.put("rowNumber", rowNumber);
-            postDataParams.put("data", data);
+            postDataParams.put("id", SHEET_ID);
+            postDataParams.put("userId", finalRowUserNumber);
+            postDataParams.put("balance", finalBalance);
+            postDataParams.put("productId", finalRowProductNumber);
+            postDataParams.put("quantity", finalQuantity);
 
             new SendRequest().execute();
 
@@ -963,11 +979,11 @@ public class ScannerActivity extends AppCompatActivity {
 
         // draw qty prices etc...
         canvas.drawText("1", 40, 950, paint);
-        canvas.drawText("Pizza head", 200, 950, paint);
-        canvas.drawText("200", 700, 950, paint);
-        canvas.drawText("2", 900, 950, paint);
+        canvas.drawText(Utils.productList.get(pos).getName(), 200, 950, paint);
+        canvas.drawText(Utils.productList.get(pos).getPrice(), 700, 950, paint);
+        canvas.drawText("1", 900, 950, paint);
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("200.00", pageWidth - 40, 950, paint);
+        canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 950, paint);
 
         paint.setColor(Color.rgb(247, 147, 30));
         canvas.drawRect(680, 1350, pageWidth - 20, 1450, paint);
@@ -977,37 +993,50 @@ public class ScannerActivity extends AppCompatActivity {
         paint.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("Total", 700, 1415, paint);
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("200", pageWidth - 40, 1415, paint);
+        canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 1415, paint);
 
         pdfDocument.finishPage(page);
 
 
         Calendar calendar = Calendar.getInstance();
         calendar.getTimeInMillis();
-        String path = Environment.getExternalStorageDirectory() + "/" + getString(R.string.app_name);
-        String fileName = calendar.getTimeInMillis() + ".pdf";
-        File file = new File(path, fileName);
+//        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+        String fileName = "User.pdf";
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), fileName);
         try {
+//            if (!file.exists()){
+//
+//                file.mkdir();
             pdfDocument.writeTo(new FileOutputStream(file));
-            viewPdf(fileName, getString(R.string.app_name));
+            Toast.makeText(ScannerActivity.this, "Path is  Created", Toast.LENGTH_SHORT).show();
+
+//            }else {
+//                Toast.makeText(ScannerActivity.this, "Path is no Created", Toast.LENGTH_SHORT).show();
+//            }
+
+
         } catch (IOException e) {
             e.printStackTrace();
         }
         pdfDocument.close();
-
+        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
+        finish();
+//        viewPdf(fileName, getString(R.string.app_name));
 
     }
 
     // Method for opening a pdf file
     private void viewPdf(String file, String directory) {
 
-        File pdfFile = new File(Environment.getExternalStorageDirectory() + "/" + directory + "/" + file);
-        Uri path = Uri.fromFile(pdfFile);
+        File pdfFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + directory + "/" + file);
+        Uri path = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", pdfFile);
+
 
         // Setting the intent for pdf reader
         Intent pdfIntent = new Intent(Intent.ACTION_VIEW);
         pdfIntent.setDataAndType(path, "application/pdf");
         pdfIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        pdfIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
         try {
             startActivity(pdfIntent);

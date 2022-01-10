@@ -1,0 +1,23 @@
+function doGet(e) {
+  return ManageSheet(e);
+}
+function doPost(e) {
+  return ManageSheet(e);
+}
+function ManageSheet(e) {
+
+  var id = e.parameter.id;
+  var userId = e.parameter.userId;
+  var balance = e.parameter.balance;
+  var productId = e.parameter.productId;
+  var quantity = e.parameter.quantity;
+
+  var ss= SpreadsheetApp.openById(id);
+  var sheetemp=ss.getSheetByName("employees");
+  sheetemp.getRange("E"+parseInt(userId)).setValue(balance);
+  var sheetproduct=ss.getSheetByName("products");
+  sheetproduct.getRange("E"+parseInt(productId)).setValue(quantity);
+ // SpreadsheetApp.getActiveSpreadsheet().getSheetByName("employees").getRange("E"+e.parameter.userId).setValue(balance);
+
+  
+}
