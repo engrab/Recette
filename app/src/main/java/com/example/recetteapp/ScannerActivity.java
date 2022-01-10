@@ -1001,8 +1001,8 @@ public class ScannerActivity extends AppCompatActivity {
         Calendar calendar = Calendar.getInstance();
         calendar.getTimeInMillis();
 //        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-        String fileName = "User.pdf";
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), fileName);
+        String fileName = "User"+calendar.getTimeInMillis()+".pdf";
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)+"/"+getString(R.string.app_name)+"/", fileName);
         try {
 //            if (!file.exists()){
 //
@@ -1019,16 +1019,17 @@ public class ScannerActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         pdfDocument.close();
+        viewPdf(fileName);
         startActivity(new Intent(ScannerActivity.this, MainActivity.class));
         finish();
-//        viewPdf(fileName, getString(R.string.app_name));
+
 
     }
 
     // Method for opening a pdf file
-    private void viewPdf(String file, String directory) {
+    private void viewPdf(String file) {
 
-        File pdfFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + directory + "/" + file);
+        File pdfFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/" + file);
         Uri path = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", pdfFile);
 
 
