@@ -5,6 +5,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,6 +22,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -294,6 +298,7 @@ public class ScannerActivity extends AppCompatActivity {
 
         return rowIndex;
     }
+
     private int getRowProdcutIndex(String id, ValueRange response) {
         List<List<Object>> values = response.getValues();
         Log.d(TAG, "getRowIndex: " + values.get(0).get(0));
@@ -390,13 +395,13 @@ public class ScannerActivity extends AppCompatActivity {
         if (response != null) {
 
             runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        finalRowProductNumber = Integer.parseInt(Utils.productList.get(pos).getId())+1;
-                        finalQuantity = quantity;
-                        setDataIntoJson();
-                    }
-                });
+                @Override
+                public void run() {
+                    finalRowProductNumber = Integer.parseInt(Utils.productList.get(pos).getId()) + 1;
+                    finalQuantity = quantity;
+                    setDataIntoJson();
+                }
+            });
 //            rowIndex = this.getRowProdcutIndex(id, response);
 //            if (rowIndex != -1) {
 //                Log.d(TAG, "updateObject: " + rowIndex);
@@ -540,6 +545,13 @@ public class ScannerActivity extends AppCompatActivity {
 
         }
 
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
+        finish();
     }
 
     /**
@@ -919,7 +931,6 @@ public class ScannerActivity extends AppCompatActivity {
     }
 
     private void createPdf() {
-        ActivityCompat.requestPermissions(ScannerActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE_STORAGE);
 
         float pageWidth = 1200;
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_pizza);
@@ -1001,8 +1012,8 @@ public class ScannerActivity extends AppCompatActivity {
         Calendar calendar = Calendar.getInstance();
         calendar.getTimeInMillis();
 //        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-        String fileName = "User"+calendar.getTimeInMillis()+".pdf";
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)+"/"+getString(R.string.app_name)+"/", fileName);
+        String fileName = "User" + calendar.getTimeInMillis() + ".pdf";
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/", fileName);
         try {
 //            if (!file.exists()){
 //
@@ -1019,11 +1030,19 @@ public class ScannerActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         pdfDocument.close();
-        viewPdf(fileName);
-        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
-        finish();
+        printPDF(fileName);
 
 
+    }
+
+    private void printPDF(String fileName) {
+        PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+        try {
+            PrintDocumentAdapter printDocumentAdapter = new PdfDocumentAdapter(ScannerActivity.this, Common.getAppPath(ScannerActivity.this) + "" + fileName);
+            printManager.print("Document", printDocumentAdapter, new PrintAttributes.Builder().build());
+        } catch (Exception e) {
+            Log.d(TAG, "printPDF: " + e.getMessage());
+        }
     }
 
     // Method for opening a pdf file
