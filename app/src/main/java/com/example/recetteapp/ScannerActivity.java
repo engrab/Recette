@@ -128,6 +128,7 @@ public class ScannerActivity extends AppCompatActivity {
     String finalUserId, finalProductId;
     int finalBalance, finalQuantity;
     int finalRowUserNumber, finalRowProductNumber;
+    private ProgressDialog dialog;
 
 
     private static final SimpleDateFormat date = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
@@ -158,7 +159,7 @@ public class ScannerActivity extends AppCompatActivity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_scanner);
-
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         initView();
 
         if (InternetConnection.checkConnection(ScannerActivity.this)) {
@@ -208,6 +209,7 @@ public class ScannerActivity extends AppCompatActivity {
                     for (int i = 0; i < size; i++) {
                         if (Utils.userList.get(i).getId().equals(tvUserId.getText().toString())) {
                             if (Utils.userList.get(i).getPassword().equals(password.getText().toString())) {
+
                                 deductBalanceQuantity(i);
                                 break;
                             }
@@ -230,6 +232,9 @@ public class ScannerActivity extends AppCompatActivity {
                 // product quantity is available
                 // To Do
                 // descrease quantity and balance
+                dialog = new ProgressDialog(ScannerActivity.this);
+                this.dialog.setMessage("Please Wait");
+                this.dialog.show();
 
                 updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
 
@@ -449,8 +454,7 @@ public class ScannerActivity extends AppCompatActivity {
     }
 
     public boolean isStoragePermissionGranted() {
-        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             Log.v(TAG, "Permission is granted");
             createPdf();
             return true;
@@ -547,12 +551,6 @@ public class ScannerActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
-        finish();
-    }
 
     /**
      * This method creates a picture of the scanned qr code
@@ -834,12 +832,10 @@ public class ScannerActivity extends AppCompatActivity {
     }
 
     public class SendRequest extends AsyncTask<String, Void, String> {
-        private ProgressDialog dialog;
+
 
         protected void onPreExecute() {
-            dialog = new ProgressDialog(ScannerActivity.this);
-            this.dialog.setMessage("Please Wait");
-            this.dialog.show();
+
         }
 
         protected String doInBackground(String... arg0) {
@@ -1009,10 +1005,7 @@ public class ScannerActivity extends AppCompatActivity {
         pdfDocument.finishPage(page);
 
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.getTimeInMillis();
-//        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-        String fileName = "User" + calendar.getTimeInMillis() + ".pdf";
+        String fileName = "User" + Calendar.getInstance().getTimeInMillis() + ".pdf";
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/", fileName);
         try {
 //            if (!file.exists()){
@@ -1030,10 +1023,12 @@ public class ScannerActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         pdfDocument.close();
+
         printPDF(fileName);
 
 
     }
+
 
     private void printPDF(String fileName) {
         PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
@@ -1043,6 +1038,7 @@ public class ScannerActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.d(TAG, "printPDF: " + e.getMessage());
         }
+
     }
 
     // Method for opening a pdf file
