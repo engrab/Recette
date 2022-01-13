@@ -104,7 +104,7 @@ public class ScannerActivity extends AppCompatActivity {
 
     public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
     public static final String SHEET_ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
-    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWb0im6sCobT5tTxnJR6Vjb8FeqkrTHMYoxU3JY8C5A93smgOyFnyXrCb14Lckziql/exec";
+    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4_tPbcRrnfNWzEQ0NHV-b6YYdKYtwbHq4ICmxlIRqhToTAHzjVXvRet1elRyVLH1J/exec";
     JSONObject postDataParams;
     private static final String TAG = "ScannerActivity";
     private static final int REQUEST_CODE_STORAGE = 100;
@@ -213,11 +213,9 @@ public class ScannerActivity extends AppCompatActivity {
                     for (int i = 0; i < size; i++) {
                         if (Utils.userList.get(i).getId().equals(tvUserId.getText().toString())) {
                             if (Utils.userList.get(i).getPassword().equals(password.getText().toString())) {
-                                if (Integer.parseInt(Utils.userList.get(i).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
-                                    userPos = i;
-                                    deductBalanceQuantity(i);
-                                    break;
-                                }
+                                userPos = i;
+                                deductBalanceQuantity(i);
+                                break;
                             }
                         }
                         if (i == size - 1) {
@@ -234,24 +232,48 @@ public class ScannerActivity extends AppCompatActivity {
 
         if (Integer.parseInt(Utils.userList.get(i).getBalance()) > Integer.parseInt(Utils.productList.get(pos).getPrice())) {
             // balance is greater than product price
-            if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
-                if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
-                    // product quantity is available
-                    // To Do
-                    // descrease quantity and balance
-                    dialog = new ProgressDialog(ScannerActivity.this);
-                    this.dialog.setMessage("Please Wait");
-                    this.dialog.show();
+            if (Utils.userList.get(i).getDate().equals(dateConverter())){
+                if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
+                    if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
+                        // product quantity is available
+                        // To Do
+                        // descrease quantity and balance
+                        dialog = new ProgressDialog(ScannerActivity.this);
+                        this.dialog.setMessage("Please Wait");
+                        this.dialog.show();
+                        finalRemain = Integer.parseInt(Utils.userList.get(i).getRemain())-Integer.parseInt(Utils.productList.get(pos).getPrice());
 
-                    updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
+                        updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
+
+                    } else {
+                        itemNotAvailableDialoge();
+                    }
 
                 } else {
-                    itemNotAvailableDialoge();
+                    reachLimitToday();
                 }
+            }else {
+                if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
+                    if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
+                        // product quantity is available
+                        // To Do
+                        // descrease quantity and balance
+                        dialog = new ProgressDialog(ScannerActivity.this);
+                        this.dialog.setMessage("Please Wait");
+                        this.dialog.show();
+                        finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit())-Integer.parseInt(Utils.productList.get(pos).getPrice());
 
-            } else {
-                reachLimitToday();
+                        updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
+
+                    } else {
+                        itemNotAvailableDialoge();
+                    }
+
+                } else {
+                    reachLimitToday();
+                }
             }
+
 
         } else {
             lowBalanceDialoge();
@@ -266,7 +288,6 @@ public class ScannerActivity extends AppCompatActivity {
         quantity = quantity - 1;
         int balance = Integer.parseInt(Utils.userList.get(i).getBalance());
         balance = balance - Integer.parseInt(Utils.productList.get(pos).getPrice());
-        finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit())-Integer.parseInt(Utils.productList.get(pos).getPrice());
 
         insertData(quantity, balance, productId, userId);
 
@@ -734,7 +755,7 @@ public class ScannerActivity extends AppCompatActivity {
     public String dateConverter() {
 
        Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy");
         return simpleDateFormat.format(calendar.getTime()).toString();
     }
 
