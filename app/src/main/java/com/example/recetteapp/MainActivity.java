@@ -49,12 +49,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(@NonNull View view) {
 
-                /**
-                 * Checking Internet Connection
-                 */
+               Utils.productList.clear();
+
                 if (InternetConnection.checkConnection(MainActivity.this)) {
                     new GetProducts().execute();
                 } else {
+                    adapter.notifyDataSetChanged();
                     Toast.makeText(MainActivity.this, "Internet Connection Not Available", Toast.LENGTH_SHORT).show();
                 }
             }

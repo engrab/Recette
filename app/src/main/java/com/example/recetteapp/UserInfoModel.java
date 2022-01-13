@@ -11,17 +11,39 @@ public class UserInfoModel implements Parcelable {
     private String email;
     private String password;
     private String balance;
+    private String date;
+    private String limit;
+    private String remain;
+
+    public String getRemain() {
+        return remain;
+    }
+
+    public void setRemain(String remain) {
+        this.remain = remain;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getLimit() {
+        return limit;
+    }
+
+    public void setLimit(String limit) {
+        this.limit = limit;
+    }
+
+
 
     public UserInfoModel() {
     }
 
-    public UserInfoModel(String id, String name, String email, String password, String balance) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.password = password;
-        this.balance = balance;
-    }
 
     public String getId() {
         return id;
@@ -63,6 +85,7 @@ public class UserInfoModel implements Parcelable {
         this.balance = balance;
     }
 
+
     @Override
     public int describeContents() {
         return 0;
@@ -75,6 +98,9 @@ public class UserInfoModel implements Parcelable {
         dest.writeString(this.email);
         dest.writeString(this.password);
         dest.writeString(this.balance);
+        dest.writeString(this.date);
+        dest.writeString(this.limit);
+        dest.writeString(this.remain);
     }
 
     public void readFromParcel(Parcel source) {
@@ -83,6 +109,9 @@ public class UserInfoModel implements Parcelable {
         this.email = source.readString();
         this.password = source.readString();
         this.balance = source.readString();
+        this.date = source.readString();
+        this.limit = source.readString();
+        this.remain = source.readString();
     }
 
     protected UserInfoModel(Parcel in) {
@@ -91,6 +120,9 @@ public class UserInfoModel implements Parcelable {
         this.email = in.readString();
         this.password = in.readString();
         this.balance = in.readString();
+        this.date = in.readString();
+        this.limit = in.readString();
+        this.remain = in.readString();
     }
 
     public static final Parcelable.Creator<UserInfoModel> CREATOR = new Parcelable.Creator<UserInfoModel>() {

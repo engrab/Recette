@@ -17,6 +17,9 @@ public class Keys {
     public static final String KEY_EMPOLYEES_EMAIL = "email";
     public static final String KEY_EMPOLYEES_PASSWORD = "password";
     public static final String KEY_EMPOLYEES_BALANCE = "balance";
+    public static final String KEY_EMPOLYEES_DATE = "date";
+    public static final String KEY_EMPOLYEES_LIMIT = "limit";
+    public static final String KEY_EMPOLYEES_REMAIN = "remain";
 
 
 

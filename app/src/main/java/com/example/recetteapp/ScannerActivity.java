@@ -34,10 +34,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import com.bumptech.glide.Glide;
@@ -116,6 +118,7 @@ public class ScannerActivity extends AppCompatActivity {
     final Activity activity = this;
     private String qrcode = "", qrcodeFormat = "";
     int pos = -1;
+    int userPos = -1;
 
     ImageView ivImage;
     TextView tvName, tvId, tvPrice, tvQuantity;
@@ -126,7 +129,7 @@ public class ScannerActivity extends AppCompatActivity {
     Sheets sheetsService = null;
 
     String finalUserId, finalProductId;
-    int finalBalance, finalQuantity;
+    int finalBalance, finalQuantity, finalRemain;
     int finalRowUserNumber, finalRowProductNumber;
     private ProgressDialog dialog;
     boolean isRefresh = false;
@@ -160,7 +163,7 @@ public class ScannerActivity extends AppCompatActivity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_scanner);
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         initView();
 
         if (InternetConnection.checkConnection(ScannerActivity.this)) {
@@ -210,9 +213,11 @@ public class ScannerActivity extends AppCompatActivity {
                     for (int i = 0; i < size; i++) {
                         if (Utils.userList.get(i).getId().equals(tvUserId.getText().toString())) {
                             if (Utils.userList.get(i).getPassword().equals(password.getText().toString())) {
-
-                                deductBalanceQuantity(i);
-                                break;
+                                if (Integer.parseInt(Utils.userList.get(i).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
+                                    userPos = i;
+                                    deductBalanceQuantity(i);
+                                    break;
+                                }
                             }
                         }
                         if (i == size - 1) {
@@ -229,19 +234,25 @@ public class ScannerActivity extends AppCompatActivity {
 
         if (Integer.parseInt(Utils.userList.get(i).getBalance()) > Integer.parseInt(Utils.productList.get(pos).getPrice())) {
             // balance is greater than product price
-            if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
-                // product quantity is available
-                // To Do
-                // descrease quantity and balance
-                dialog = new ProgressDialog(ScannerActivity.this);
-                this.dialog.setMessage("Please Wait");
-                this.dialog.show();
+            if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
+                if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
+                    // product quantity is available
+                    // To Do
+                    // descrease quantity and balance
+                    dialog = new ProgressDialog(ScannerActivity.this);
+                    this.dialog.setMessage("Please Wait");
+                    this.dialog.show();
 
-                updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
+                    updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
+
+                } else {
+                    itemNotAvailableDialoge();
+                }
 
             } else {
-                itemNotAvailableDialoge();
+                reachLimitToday();
             }
+
         } else {
             lowBalanceDialoge();
         }
@@ -255,6 +266,7 @@ public class ScannerActivity extends AppCompatActivity {
         quantity = quantity - 1;
         int balance = Integer.parseInt(Utils.userList.get(i).getBalance());
         balance = balance - Integer.parseInt(Utils.productList.get(pos).getPrice());
+        finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit())-Integer.parseInt(Utils.productList.get(pos).getPrice());
 
         insertData(quantity, balance, productId, userId);
 
@@ -305,24 +317,6 @@ public class ScannerActivity extends AppCompatActivity {
         return rowIndex;
     }
 
-    private int getRowProdcutIndex(String id, ValueRange response) {
-        List<List<Object>> values = response.getValues();
-        Log.d(TAG, "getRowIndex: " + values.get(0).get(0));
-        int rowIndex = -1;
-
-        if (values != null) {
-
-            for (int j = 0; j < response.getValues().size() - 1; j++) {
-
-                if (values.get(j).get(0).equals(id)) {
-                    Log.d(TAG, "There is a match! i= " + j);
-                    rowIndex = j;
-                }
-            }
-        }
-
-        return rowIndex;
-    }
 
     public void updateBalance(String id, String sheetName, int balance) throws IOException, GeneralSecurityException {
 
@@ -456,9 +450,17 @@ public class ScannerActivity extends AppCompatActivity {
 
     public boolean isStoragePermissionGranted() {
         if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            Log.v(TAG, "Permission is granted");
-            createPdf();
-            return true;
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
+                Log.v(TAG, "Permission is granted");
+                createPdf();
+                return true;
+            }
+            else {
+                Log.v(TAG, "Permission is revoked");
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+                return false;
+            }
+
         } else {
 
             Log.v(TAG, "Permission is revoked");
@@ -468,11 +470,26 @@ public class ScannerActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
-            //resume tasks needing this permission
+        switch (requestCode){
+            case 1:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
+                    //resume tasks needing this permission
+                    break;
+                }
+
+
+            case 2:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
+                    //resume tasks needing this permission
+                    break;
+                }
+
+
+
         }
     }
 
@@ -493,6 +510,26 @@ public class ScannerActivity extends AppCompatActivity {
                 })
 
                 .setIcon(R.drawable.ic_baseline_do_disturb_24)
+                .show();
+    }
+
+    public void reachLimitToday() {
+        new AlertDialog.Builder(ScannerActivity.this)
+                .setTitle("💰 Sorry")
+                .setMessage("Your Daily limit reach")
+                .setCancelable(false)
+
+                // Specifying a listener allows you to take an action before dismissing the dialog.
+                // The dialog is automatically dismissed when a dialog button is clicked.
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
+                        finish();
+                    }
+                })
+
+                .setIcon(R.drawable.ic_baseline_attach_money_24)
                 .show();
     }
 
@@ -550,7 +587,7 @@ public class ScannerActivity extends AppCompatActivity {
 
         }
 
-        if (isRefresh){
+        if (isRefresh) {
             startActivity(new Intent(ScannerActivity.this, MainActivity.class));
             isRefresh = false;
             finish();
@@ -694,6 +731,13 @@ public class ScannerActivity extends AppCompatActivity {
         finish();
     }
 
+    public String dateConverter() {
+
+       Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        return simpleDateFormat.format(calendar.getTime()).toString();
+    }
+
     class GetUserInfo extends AsyncTask<Void, Void, Void> {
 
         ProgressDialog dialog;
@@ -775,6 +819,9 @@ public class ScannerActivity extends AppCompatActivity {
                                 model.setEmail(innerObject.getString(Keys.KEY_EMPOLYEES_EMAIL));
                                 model.setPassword(innerObject.getString(Keys.KEY_EMPOLYEES_PASSWORD));
                                 model.setBalance(innerObject.getString(Keys.KEY_EMPOLYEES_BALANCE));
+                                model.setDate(innerObject.getString(Keys.KEY_EMPOLYEES_DATE));
+                                model.setLimit(innerObject.getString(Keys.KEY_EMPOLYEES_LIMIT));
+                                model.setRemain(innerObject.getString(Keys.KEY_EMPOLYEES_REMAIN));
 
 
                                 /**
@@ -824,12 +871,14 @@ public class ScannerActivity extends AppCompatActivity {
     public void setDataIntoJson() {
         postDataParams = new JSONObject();
         try {
-
+            String dateTime = dateConverter();
             postDataParams.put("id", SHEET_ID);
             postDataParams.put("userId", finalRowUserNumber);
             postDataParams.put("balance", finalBalance);
             postDataParams.put("productId", finalRowProductNumber);
             postDataParams.put("quantity", finalQuantity);
+            postDataParams.put("date", dateTime);
+            postDataParams.put("remain", finalRemain);
 
             new SendRequest().execute();
 
@@ -973,7 +1022,6 @@ public class ScannerActivity extends AppCompatActivity {
         canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 500, paint);
 
 
-
         paint.setColor(Color.BLACK);
         paint.setTextSize(30f);
         paint.setTextAlign(Paint.Align.LEFT);
@@ -984,19 +1032,16 @@ public class ScannerActivity extends AppCompatActivity {
         pdfDocument.finishPage(page);
 
 
-        String fileName = "User" + Calendar.getInstance().getTimeInMillis() + ".pdf";
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/", fileName);
+        String fileName = "User" + Calendar.getInstance().getTimeInMillis()+ ".pdf";
+        File file = new File(android.os.Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/", fileName);
         try {
-//            if (!file.exists()){
-//
-//                file.mkdir();
-            pdfDocument.writeTo(new FileOutputStream(file));
-            Toast.makeText(ScannerActivity.this, "Path is  Created", Toast.LENGTH_SHORT).show();
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+                pdfDocument.writeTo(new FileOutputStream(file));
+            }else {
+                pdfDocument.writeTo(new FileOutputStream(file));
 
-//            }else {
-//                Toast.makeText(ScannerActivity.this, "Path is no Created", Toast.LENGTH_SHORT).show();
-//            }
-
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
