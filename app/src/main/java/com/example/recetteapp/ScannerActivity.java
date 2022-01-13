@@ -129,6 +129,7 @@ public class ScannerActivity extends AppCompatActivity {
     int finalBalance, finalQuantity;
     int finalRowUserNumber, finalRowProductNumber;
     private ProgressDialog dialog;
+    boolean isRefresh = false;
 
 
     private static final SimpleDateFormat date = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
@@ -549,6 +550,12 @@ public class ScannerActivity extends AppCompatActivity {
 
         }
 
+        if (isRefresh){
+            startActivity(new Intent(ScannerActivity.this, MainActivity.class));
+            isRefresh = false;
+            finish();
+        }
+
     }
 
 
@@ -928,79 +935,51 @@ public class ScannerActivity extends AppCompatActivity {
 
     private void createPdf() {
 
-        float pageWidth = 1200;
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_pizza);
-        Bitmap scalBitmap = Bitmap.createScaledBitmap(bitmap, 1200, 518, false);
+        float pageWidth = 500;
+        float pageHeight = 1000;
+
 
         PdfDocument pdfDocument = new PdfDocument();
         Paint paint = new Paint();
         Paint titlePaint = new Paint();
 
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(1200, 2010, 1).create();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder((int) pageWidth, (int) pageHeight, 1).create();
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-// add image
-        canvas.drawBitmap(scalBitmap, 0, 0, paint);
 
         // add name of pizza
         titlePaint.setTextAlign(Paint.Align.CENTER);
         titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        titlePaint.setTextSize(70);
-        canvas.drawText("Diamend Pizza", pageWidth / 2, 270, titlePaint);
+        titlePaint.setTextSize(20f);
+        canvas.drawText("Recette App Production", pageWidth / 2, 200, titlePaint);
 
-// add invoice title
-
-        titlePaint.setTextAlign(Paint.Align.CENTER);
-        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.ITALIC));
-        titlePaint.setTextSize(70);
-        canvas.drawText("INVOICE", pageWidth / 2, 500, titlePaint);
 
         // date and time
         paint.setTextAlign(Paint.Align.RIGHT);
+        paint.setTextSize(16f);
         Date date = new Date();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy");
-        canvas.drawText("Date: " + simpleDateFormat.format(date), pageWidth - 20, 640, paint);
+        canvas.drawText("Date: " + simpleDateFormat.format(date), pageWidth - 20, 300, paint);
         SimpleDateFormat simpleTimeFormat = new SimpleDateFormat("HH:mm:ss");
-        canvas.drawText("Time: " + simpleTimeFormat.format(date), pageWidth - 20, 700, paint);
-
-        // draw rectangle
-
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2);
-        canvas.drawRect(20, 780, pageWidth - 20, 860, paint);
-
-        paint.setTextAlign(Paint.Align.LEFT);
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawText("Sir. No. ", 40, 830, paint);
-        canvas.drawText("Item Description", 200, 830, paint);
-        canvas.drawText("Price ", 700, 830, paint);
-        canvas.drawText("Qty.", 900, 830, paint);
-        canvas.drawText("Total", 1050, 830, paint);
-
-        canvas.drawLine(180, 790, 180, 840, paint);
-        canvas.drawLine(680, 790, 680, 840, paint);
-        canvas.drawLine(880, 790, 880, 840, paint);
-        canvas.drawLine(1030, 790, 1030, 840, paint);
-
+        canvas.drawText("Time: " + simpleTimeFormat.format(date), pageWidth - 20, 350, paint);
 
         // draw qty prices etc...
-        canvas.drawText("1", 40, 950, paint);
-        canvas.drawText(Utils.productList.get(pos).getName(), 200, 950, paint);
-        canvas.drawText(Utils.productList.get(pos).getPrice(), 700, 950, paint);
-        canvas.drawText("1", 900, 950, paint);
+        canvas.drawText("1", 40, 500, paint);
+        canvas.drawText(Utils.productList.get(pos).getName(), 200, 500, paint);
+        canvas.drawText(Utils.productList.get(pos).getPrice(), 700, 500, paint);
+        canvas.drawText("1", 900, 500, paint);
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 950, paint);
+        canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 500, paint);
 
-        paint.setColor(Color.rgb(247, 147, 30));
-        canvas.drawRect(680, 1350, pageWidth - 20, 1450, paint);
+
 
         paint.setColor(Color.BLACK);
-        paint.setTextSize(50f);
+        paint.setTextSize(30f);
         paint.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText("Total", 700, 1415, paint);
+        canvas.drawText("Total", 700, 700, paint);
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 1415, paint);
+        canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 700, paint);
 
         pdfDocument.finishPage(page);
 
@@ -1026,6 +1005,7 @@ public class ScannerActivity extends AppCompatActivity {
 
         printPDF(fileName);
 
+        isRefresh = true;
 
     }
 
@@ -1035,6 +1015,7 @@ public class ScannerActivity extends AppCompatActivity {
         try {
             PrintDocumentAdapter printDocumentAdapter = new PdfDocumentAdapter(ScannerActivity.this, Common.getAppPath(ScannerActivity.this) + "" + fileName);
             printManager.print("Document", printDocumentAdapter, new PrintAttributes.Builder().build());
+
         } catch (Exception e) {
             Log.d(TAG, "printPDF: " + e.getMessage());
         }

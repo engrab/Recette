@@ -3,17 +3,19 @@ package com.example.recetteapp;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -24,7 +26,7 @@ import org.json.JSONObject;
 
 
 public class MainActivity extends AppCompatActivity {
-    private ListView listView;
+    private RecyclerView rv;
     private ProductArrayAdapter adapter;
     private static final String TAG = MainActivity.class.getName();
 
@@ -37,21 +39,10 @@ public class MainActivity extends AppCompatActivity {
 
 
         adapter = new ProductArrayAdapter(this, Utils.productList);
-
-        listView = findViewById(R.id.listView);
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                Intent intent = new Intent(MainActivity.this, ScannerActivity.class);
-                intent.putExtra("pos", position);
-                startActivity(intent);
+        rv = findViewById(R.id.rv);
 
 
-//                Snackbar.make(inflate.findViewById(R.id.parentLayout), list.get(position).getBrandID() + " => " + list.get(position).getItemName(), Snackbar.LENGTH_LONG).show();
-            }
-        });
+
 
         fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -70,6 +61,22 @@ public class MainActivity extends AppCompatActivity {
         });
         new GetProducts().execute();
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        int orientation = this.getResources().getConfiguration().orientation;
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            rv.setLayoutManager(new GridLayoutManager(this, 1));
+            rv.setAdapter(adapter);
+
+        } else {
+            rv.setLayoutManager(new GridLayoutManager(this, 2));
+            rv.setAdapter(adapter);
+
+        }
     }
 
     @Override
