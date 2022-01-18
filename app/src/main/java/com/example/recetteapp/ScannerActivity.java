@@ -1049,8 +1049,9 @@ public class ScannerActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         pdfDocument.close();
-
         printPDF(fileName);
+
+
 
         isRefresh = true;
 
@@ -1067,26 +1068,6 @@ public class ScannerActivity extends AppCompatActivity {
             Log.d(TAG, "printPDF: " + e.getMessage());
         }
 
-    }
-
-    // Method for opening a pdf file
-    private void viewPdf(String file) {
-
-        File pdfFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/" + file);
-        Uri path = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", pdfFile);
-
-
-        // Setting the intent for pdf reader
-        Intent pdfIntent = new Intent(Intent.ACTION_VIEW);
-        pdfIntent.setDataAndType(path, "application/pdf");
-        pdfIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        pdfIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        try {
-            startActivity(pdfIntent);
-        } catch (ActivityNotFoundException e) {
-            Toast.makeText(ScannerActivity.this, "Can't read pdf file", Toast.LENGTH_SHORT).show();
-        }
     }
 
 }

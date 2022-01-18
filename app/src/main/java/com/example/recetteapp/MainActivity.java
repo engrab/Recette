@@ -41,7 +41,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        adapter = new ProductArrayAdapter(this, Utils.productList);
         rv = findViewById(R.id.rv);
 
 
@@ -49,15 +48,17 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        Utils.productList.clear();
-        new GetProducts().execute();
-
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+
+        new GetProducts().execute();
+        adapter = new ProductArrayAdapter(this, Utils.productList);
+
 
         int orientation = this.getResources().getConfiguration().orientation;
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -74,11 +75,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onRestart() {
         super.onRestart();
-        if (InternetConnection.checkConnection(MainActivity.this)) {
-            new GetProducts().execute();
-        } else {
-            Toast.makeText(MainActivity.this, "Internet Connection Not Available", Toast.LENGTH_SHORT).show();
-        }
     }
 
     class GetProducts extends AsyncTask<Void, Void, Void> {
@@ -138,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
                         int lenArray = array.length();
                         if (lenArray > 0) {
+                            Utils.productList.clear();
                             for (; jIndex < lenArray; jIndex++) {
 
                                 /**
