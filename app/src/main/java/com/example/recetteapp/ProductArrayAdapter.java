@@ -17,6 +17,8 @@ import com.bumptech.glide.Glide;
 
 import java.util.List;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     List<ProductModel> modelList;
@@ -30,17 +32,16 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.layout_row_view, parent, false));
+        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.item_menu_list, parent, false));
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
         if (holder instanceof ViewHolder){
-            ((ViewHolder) holder).id.setText(modelList.get(position).getId());
             ((ViewHolder) holder).name.setText(modelList.get(position).getName());
-            ((ViewHolder) holder).price.setText(modelList.get(position).getPrice());
-            ((ViewHolder) holder).quantity.setText(modelList.get(position).getQuantity());
+            ((ViewHolder) holder).price.setText(" $ "+modelList.get(position).getPrice());
+            ((ViewHolder) holder).quantity.setText(modelList.get(position).getQuantity()+" ITEMS");
 
             // one drive image . only put image id on image coulumn
             Glide.with(context).load("https://drive.google.com/uc?export=view&id="+modelList.get(position).getImages()).into(((ViewHolder) holder).image); // for one drive images ....
@@ -68,9 +69,8 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     static class ViewHolder extends RecyclerView.ViewHolder{
 
 
-        public  TextView id;
         public  TextView name;
-        public  ImageView image;
+        public CircleImageView image;
         public  TextView price;
         public  TextView quantity;
 
@@ -78,11 +78,10 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            name = itemView.findViewById(R.id.tvName);
-            image = itemView.findViewById(R.id.ivImage);
-            quantity = itemView.findViewById(R.id.tvQuantity);
-            price = itemView.findViewById(R.id.tvPrice);
-            id = itemView.findViewById(R.id.tvId);
+            name = itemView.findViewById(R.id.tvMenuTitle);
+            image = itemView.findViewById(R.id.ivMenu);
+            quantity = itemView.findViewById(R.id.tvMenuItems);
+            price = itemView.findViewById(R.id.tvMenuPrice);
         }
 
     }

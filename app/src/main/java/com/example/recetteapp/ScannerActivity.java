@@ -108,10 +108,7 @@ public class ScannerActivity extends AppCompatActivity {
     JSONObject postDataParams;
     private static final String TAG = "ScannerActivity";
     private static final int REQUEST_CODE_STORAGE = 100;
-    private TextView tvUserId;
     private EditText password;
-    private TextView mLabelFormat;
-    private ImageView codeImage;
     private GeneralHandler generalHandler;
     Bitmap bitmap;
     MultiFormatWriter multiFormatWriter;
@@ -121,7 +118,7 @@ public class ScannerActivity extends AppCompatActivity {
     int userPos = -1;
 
     ImageView ivImage;
-    TextView tvName, tvId, tvPrice, tvQuantity;
+    TextView tvName,  tvPrice;
     String userId;
     int userBalance;
     String productId;
@@ -135,7 +132,6 @@ public class ScannerActivity extends AppCompatActivity {
     boolean isRefresh = false;
 
 
-    private static final SimpleDateFormat date = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
     private static final String STATE_QRCODE = MainActivity.class.getName();
     private static final String STATE_QRCODEFORMAT = "format";
 
@@ -181,11 +177,9 @@ public class ScannerActivity extends AppCompatActivity {
             if (qrcode.equals("")) {
                 zxingScan();
             } else {
-                codeImage.setVisibility(View.VISIBLE);
                 showQrImage();
                 password.setVisibility(View.VISIBLE);
-                mLabelFormat.setVisibility(View.VISIBLE);
-                tvUserId.setText(qrcode);
+
 
             }
 
@@ -211,7 +205,7 @@ public class ScannerActivity extends AppCompatActivity {
 
                 if (size > 0) {
                     for (int i = 0; i < size; i++) {
-                        if (Utils.userList.get(i).getId().equals(tvUserId.getText().toString())) {
+                        if (Utils.userList.get(i).getId().equals(qrcode)) {
                             if (Utils.userList.get(i).getPassword().equals(password.getText().toString())) {
                                 userPos = i;
                                 deductBalanceQuantity(i);
@@ -576,16 +570,11 @@ public class ScannerActivity extends AppCompatActivity {
 
     private void initView() {
 
-        tvUserId = (TextView) findViewById(R.id.tvUserId);
         password = findViewById(R.id.etPassword);
-        mLabelFormat = (TextView) findViewById(R.id.labelFormat);
-        codeImage = (ImageView) findViewById(R.id.resultImageMain);
 
         ivImage = findViewById(R.id.ivImage);
         tvName = findViewById(R.id.tvName);
-        tvId = findViewById(R.id.tvId);
         tvPrice = findViewById(R.id.tvPrice);
-        tvQuantity = findViewById(R.id.tvQuantity);
 
     }
 
@@ -600,9 +589,8 @@ public class ScannerActivity extends AppCompatActivity {
             Glide.with(this).load("https://drive.google.com/uc?export=view&id=" + Utils.productList.get(pos).getImages()).into(ivImage); // for one drive images ....
 
             tvName.setText(Utils.productList.get(pos).getName());
-            tvId.setText(Utils.productList.get(pos).getId());
-            tvPrice.setText("" + Utils.productList.get(pos).getPrice());
-            tvQuantity.setText("" + Utils.productList.get(pos).getQuantity());
+            tvPrice.setText(" $ " + Utils.productList.get(pos).getPrice());
+
 
             Log.d("TAG", "onResume: " + Utils.productList.get(pos).getName());
 
@@ -632,13 +620,11 @@ public class ScannerActivity extends AppCompatActivity {
             BitMatrix bitMatrix = multiFormatWriter.encode(qrcode, format, 250, 250, hintMap);
             BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
             bitmap = barcodeEncoder.createBitmap(bitMatrix);
-            codeImage.setImageBitmap(bitmap);
-            codeImage.setEnabled(true);
+
 
 
         } catch (Exception e) {
-            codeImage.setImageResource(R.drawable.ic_baseline_error_outline_24);
-            codeImage.setEnabled(false);
+
         }
     }
 
@@ -655,11 +641,9 @@ public class ScannerActivity extends AppCompatActivity {
                 qrcodeFormat = result.getFormatName();
                 qrcode = result.getContents();
                 if (!qrcode.equals("")) {
-                    codeImage.setVisibility(View.VISIBLE);
+
                     showQrImage();
                     password.setVisibility(View.VISIBLE);
-                    mLabelFormat.setVisibility(View.VISIBLE);
-                    tvUserId.setText(qrcode);
 
 
                 }
@@ -727,10 +711,7 @@ public class ScannerActivity extends AppCompatActivity {
             qrcode = result.getText();
 
             if (qrcode != null) {
-                codeImage.setVisibility(View.VISIBLE);
-                mLabelFormat.setVisibility(View.VISIBLE);
                 password.setVisibility(View.VISIBLE);
-                tvUserId.setText(qrcode);
                 showQrImage();
 
             } else {

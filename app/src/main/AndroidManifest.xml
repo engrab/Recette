@@ -19,7 +19,6 @@
         android:theme="@style/Theme.RecetteApp">
         <activity
             android:name=".ScannerActivity"
-            android:exported="true"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Design.Light.NoActionBar"/>
         <activity

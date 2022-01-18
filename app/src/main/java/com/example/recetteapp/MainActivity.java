@@ -4,12 +4,15 @@ package com.example.recetteapp;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.Toast;
+import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,6 +21,8 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.ViewTarget;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.json.JSONArray;
@@ -30,13 +35,11 @@ public class MainActivity extends AppCompatActivity {
     private ProductArrayAdapter adapter;
     private static final String TAG = MainActivity.class.getName();
 
-    public static FloatingActionButton fab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
 
         adapter = new ProductArrayAdapter(this, Utils.productList);
         rv = findViewById(R.id.rv);
@@ -44,22 +47,11 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(@NonNull View view) {
 
-               Utils.productList.clear();
 
-                if (InternetConnection.checkConnection(MainActivity.this)) {
-                    new GetProducts().execute();
-                } else {
-                    adapter.notifyDataSetChanged();
-                    Toast.makeText(MainActivity.this, "Internet Connection Not Available", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+        Utils.productList.clear();
         new GetProducts().execute();
+
 
     }
 
@@ -110,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
                 jIndex = x;
 
             dialog = new ProgressDialog(MainActivity.this);
-            dialog.setTitle("Hey Wait Please..." + x);
+            dialog.setTitle("Hey Wait Please..." );
             dialog.setMessage("I am getting your Data");
             dialog.setCancelable(false);
             dialog.show();
@@ -207,6 +199,8 @@ public class MainActivity extends AppCompatActivity {
              */
             if (Utils.productList.size() > 0) {
                 adapter.notifyDataSetChanged();
+
+
 
             } else {
                 Toast.makeText(MainActivity.this, "No Data Found", Toast.LENGTH_SHORT).show();            }

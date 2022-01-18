@@ -24,5 +24,17 @@
         <item name="colorControlNormal">#ffffff</item>
         <item name="android:textColorHint">#8c8c8c</item>
     </style>
+    <style name="TextRegularSizeRegular">
+
+        <item name="android:textSize">13dp</item>
+    </style>
+
+    <style name="styleEditText" parent="TextRegularSizeRegular">
+        <item name="android:background">@drawable/style_app_edittext</item>
+        <item name="android:padding">5dp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textColorHint">@color/black</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
 
 </resources>
