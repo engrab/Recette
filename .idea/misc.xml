@@ -9,7 +9,7 @@
         <entry key="app/src/main/res/drawable/solid_scanner_circle.xml" value="0.19270833333333334" />
         <entry key="app/src/main/res/drawable/style_app_edittext.xml" value="0.33425925925925926" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.32708333333333334" />
-        <entry key="app/src/main/res/layout/activity_scanner.xml" value="0.32708333333333334" />
+        <entry key="app/src/main/res/layout/activity_scanner.xml" value="0.22" />
         <entry key="app/src/main/res/layout/fragment_detail.xml" value="0.32708333333333334" />
         <entry key="app/src/main/res/layout/fragment_list.xml" value="0.32708333333333334" />
         <entry key="app/src/main/res/layout/item_menu_list.xml" value="0.33125" />

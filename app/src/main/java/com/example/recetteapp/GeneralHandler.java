@@ -26,13 +26,13 @@ public class GeneralHandler {
     /**
      * Depending on the saved settings. The day or night mode will be loaded
      */
-    public void loadTheme(){
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
-        String history_setting = prefs.getString("pref_day_night_mode", "");
-        if(history_setting.equals("1")){
-            activity.setTheme(R.style.darktheme);
-        }
-    }
+//    public void loadTheme(){
+//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+//        String history_setting = prefs.getString("pref_day_night_mode", "");
+//        if(history_setting.equals("1")){
+//            activity.setTheme(R.style.darktheme);
+//        }
+//    }
 
     /**
      * Method is used to convert parsed id to BarcodeFormat to create an image of the qr code

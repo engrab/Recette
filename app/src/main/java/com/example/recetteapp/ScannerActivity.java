@@ -144,7 +144,7 @@ public class ScannerActivity extends AppCompatActivity {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putString(STATE_QRCODE, qrcode);
         savedInstanceState.putString(STATE_QRCODEFORMAT, qrcodeFormat);
-        generalHandler.loadTheme();
+
     }
 
     /**
@@ -154,10 +154,10 @@ public class ScannerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        generalHandler = new GeneralHandler(this);
-        generalHandler.loadTheme();
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        generalHandler = new GeneralHandler(this);
+
         setContentView(R.layout.activity_scanner);
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         initView();

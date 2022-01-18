@@ -1,6 +1,8 @@
 package com.example.recetteapp;
 
 
+import static com.example.recetteapp.InternetConnection.checkConnection;
+
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -11,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView rv;
     private ProductArrayAdapter adapter;
     private static final String TAG = MainActivity.class.getName();
+    private TextView noInternet;
 
 
     @Override
@@ -42,11 +46,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         rv = findViewById(R.id.rv);
-
-
-
-
-
+        noInternet = findViewById(R.id.tvNoInternet);
 
 
     }
@@ -56,25 +56,26 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
 
 
-        new GetProducts().execute();
-        adapter = new ProductArrayAdapter(this, Utils.productList);
+        if (checkConnection(this)){
+            noInternet.setVisibility(View.GONE);
+            new GetProducts().execute();
+            adapter = new ProductArrayAdapter(this, Utils.productList);
 
 
-        int orientation = this.getResources().getConfiguration().orientation;
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            rv.setLayoutManager(new GridLayoutManager(this, 1));
-            rv.setAdapter(adapter);
+            int orientation = this.getResources().getConfiguration().orientation;
+            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                rv.setLayoutManager(new GridLayoutManager(this, 1));
+                rv.setAdapter(adapter);
 
-        } else {
-            rv.setLayoutManager(new GridLayoutManager(this, 2));
-            rv.setAdapter(adapter);
+            } else {
+                rv.setLayoutManager(new GridLayoutManager(this, 2));
+                rv.setAdapter(adapter);
 
+            }
+        }else {
+            noInternet.setVisibility(View.VISIBLE);
         }
-    }
 
-    @Override
-    protected void onRestart() {
-        super.onRestart();
     }
 
     class GetProducts extends AsyncTask<Void, Void, Void> {
