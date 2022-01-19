@@ -104,7 +104,7 @@ public class ScannerActivity extends AppCompatActivity {
 
     public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
     public static final String SHEET_ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
-    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiAqciMPHNdZYVQ92jI7O8k6XuoRuU_Bq9TAjVgm1AkCEJ6XtKkMs28q_fD8fIddQv/exec";
+    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGr5bybF7e4N7G2nQpPpHzQpYShsF-KGGAtd0ScVGbCPfu5yHGNio_FdT2y0PmfSj3/exec";
     JSONObject postDataParams;
     private static final String TAG = "ScannerActivity";
     private static final int REQUEST_CODE_STORAGE = 100;
@@ -203,7 +203,9 @@ public class ScannerActivity extends AppCompatActivity {
                         if (Utils.userList.get(i).getId().equals(qrcode)) {
                             if (Utils.userList.get(i).getPassword().equals(password.getText().toString())) {
                                 userPos = i;
+
                                 deductBalanceQuantity(i);
+
                                 break;
                             }
                         }
@@ -227,9 +229,7 @@ public class ScannerActivity extends AppCompatActivity {
                         // product quantity is available
                         // To Do
                         // descrease quantity and balance
-                        dialog = new ProgressDialog(ScannerActivity.this);
-                        this.dialog.setMessage("Please Wait");
-                        this.dialog.show();
+
                         finalRemain = Integer.parseInt(Utils.userList.get(i).getRemain())-Integer.parseInt(Utils.productList.get(pos).getPrice());
 
                         updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
@@ -244,12 +244,7 @@ public class ScannerActivity extends AppCompatActivity {
             }else {
 
                     if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
-                        // product quantity is available
-                        // To Do
-                        // descrease quantity and balance
-                        dialog = new ProgressDialog(ScannerActivity.this);
-                        this.dialog.setMessage("Please Wait");
-                        this.dialog.show();
+
                         finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit())-Integer.parseInt(Utils.productList.get(pos).getPrice());
 
                         updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
@@ -289,6 +284,14 @@ public class ScannerActivity extends AppCompatActivity {
         productQuantity = quantity;
         Log.d(TAG, "insertData: into Sheets: \n Quantity Remaining: " + productQuantity + "\n Balance Remaining: " + userBalance + " \n Product ID: " + productId + "\n User ID: " + userId);
 
+
+        dialog = new ProgressDialog(ScannerActivity.this);
+        dialog.setTitle("Hi Wait Please..." );
+        dialog.setMessage("I am Update your record");
+        dialog.setCancelable(false);
+        dialog.show();
+
+
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -307,17 +310,15 @@ public class ScannerActivity extends AppCompatActivity {
 
     private int getRowIndex(String id, ValueRange response) {
         List<List<Object>> values = response.getValues();
-        Log.d(TAG, "getRowIndex: " + values.get(0).get(0));
+
         int rowIndex = -1;
 
-        if (values != null) {
-
-            for (int j = 0; j < response.getValues().size() - 1; j++) {
-
-                if (values.get(j).get(0).equals(id)) {
-                    Log.d(TAG, "There is a match! i= " + j);
-                    rowIndex = j;
-                }
+        for (int j = 0; j <= response.getValues().size() - 1; j++) {
+            Log.d(TAG, "getRowIndex: " + values.get(j).get(0));
+            if (values.get(j).get(0).equals(id)) {
+                Log.d(TAG, "There is a match! j= " + j+" id: "+id);
+                rowIndex = j;
+                return rowIndex;
             }
         }
 
@@ -354,7 +355,7 @@ public class ScannerActivity extends AppCompatActivity {
         int rowIndex = -1;
 
         if (response != null) {
-            rowIndex = this.getRowIndex(id, response);
+            rowIndex = getRowIndex(id, response);
             if (rowIndex != -1) {
                 Log.d(TAG, "updateObject: " + rowIndex);
 
@@ -901,6 +902,7 @@ public class ScannerActivity extends AppCompatActivity {
 
 
         protected void onPreExecute() {
+            super.onPreExecute();
 
         }
 
@@ -957,11 +959,13 @@ public class ScannerActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result) {
-            if (dialog.isShowing()) {
+            super.onPostExecute(result);
+            if (dialog.isShowing()){
                 dialog.dismiss();
+            }
                 successfullyDialoge();
                 Log.d(TAG, "onPostExecute: " + result);
-            }
+
 
 
         }
