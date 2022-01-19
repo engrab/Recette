@@ -247,7 +247,7 @@ public class ScannerActivity extends AppCompatActivity {
                     reachLimitToday();
                 }
             }else {
-                if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
+
                     if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
                         // product quantity is available
                         // To Do
@@ -263,9 +263,6 @@ public class ScannerActivity extends AppCompatActivity {
                         itemNotAvailableDialoge();
                     }
 
-                } else {
-                    reachLimitToday();
-                }
             }
 
 
