@@ -162,11 +162,6 @@ public class ScannerActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         initView();
 
-        if (InternetConnection.checkConnection(ScannerActivity.this)) {
-            new GetUserInfo().execute();
-        } else {
-            Toast.makeText(ScannerActivity.this, "Internet Connection Not Available", Toast.LENGTH_SHORT).show();
-        }
 
 
         //If the device were rotated then restore information
@@ -578,6 +573,9 @@ public class ScannerActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+
+
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
 
@@ -618,6 +616,11 @@ public class ScannerActivity extends AppCompatActivity {
             BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
             bitmap = barcodeEncoder.createBitmap(bitMatrix);
 
+            if (InternetConnection.checkConnection(ScannerActivity.this)) {
+                new GetUserInfo().execute();
+            } else {
+                Toast.makeText(ScannerActivity.this, "Internet Connection Not Available", Toast.LENGTH_SHORT).show();
+            }
 
 
         } catch (Exception e) {
@@ -758,7 +761,7 @@ public class ScannerActivity extends AppCompatActivity {
                 jIndex = x;
 
             dialog = new ProgressDialog(ScannerActivity.this);
-            dialog.setTitle("Please Wait..." + x);
+            dialog.setTitle("Please Wait..." );
             dialog.setMessage("I am getting your Data");
             dialog.setCancelable(false);
             dialog.show();
@@ -794,6 +797,7 @@ public class ScannerActivity extends AppCompatActivity {
 
                         int lenArray = array.length();
                         if (lenArray > 0) {
+                            Utils.userList.clear();
                             for (; jIndex < lenArray; jIndex++) {
 
                                 /**
@@ -851,14 +855,17 @@ public class ScannerActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            dialog.dismiss();
+            if (dialog != null){
+
+                dialog.dismiss();
+            }
             /**
              * Checking if List size if more than zero then
              * Update ListView
              */
             if (Utils.userList.size() > 0) {
                 Log.d(TAG, "onPostExecute: " + Utils.userList.size());
-//                adapter.notifyDataSetChanged();
+
 
             } else {
                 Toast.makeText(ScannerActivity.this, "No Data Found", Toast.LENGTH_SHORT).show();
@@ -878,6 +885,9 @@ public class ScannerActivity extends AppCompatActivity {
             postDataParams.put("quantity", finalQuantity);
             postDataParams.put("date", dateTime);
             postDataParams.put("remain", finalRemain);
+
+            postDataParams.put("price",Utils.productList.get(pos).getPrice());
+            postDataParams.put("pname",Utils.productList.get(pos).getName());
 
             new SendRequest().execute();
 
