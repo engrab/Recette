@@ -104,7 +104,7 @@ public class ScannerActivity extends AppCompatActivity {
 
     public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
     public static final String SHEET_ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
-    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4_tPbcRrnfNWzEQ0NHV-b6YYdKYtwbHq4ICmxlIRqhToTAHzjVXvRet1elRyVLH1J/exec";
+    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiAqciMPHNdZYVQ92jI7O8k6XuoRuU_Bq9TAjVgm1AkCEJ6XtKkMs28q_fD8fIddQv/exec";
     JSONObject postDataParams;
     private static final String TAG = "ScannerActivity";
     private static final int REQUEST_CODE_STORAGE = 100;
@@ -219,7 +219,7 @@ public class ScannerActivity extends AppCompatActivity {
 
     private void deductBalanceQuantity(int i) {
 
-        if (Integer.parseInt(Utils.userList.get(i).getBalance()) > Integer.parseInt(Utils.productList.get(pos).getPrice())) {
+        if (Integer.parseInt(Utils.userList.get(userPos).getBalance()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
             // balance is greater than product price
             if (Utils.userList.get(i).getDate().equals(dateConverter())){
                 if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
@@ -855,7 +855,7 @@ public class ScannerActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if (dialog != null){
+            if (dialog.isShowing()){
 
                 dialog.dismiss();
             }
@@ -886,6 +886,7 @@ public class ScannerActivity extends AppCompatActivity {
             postDataParams.put("date", dateTime);
             postDataParams.put("remain", finalRemain);
 
+            postDataParams.put("uname",Utils.userList.get(userPos).getName());
             postDataParams.put("price",Utils.productList.get(pos).getPrice());
             postDataParams.put("pname",Utils.productList.get(pos).getName());
 

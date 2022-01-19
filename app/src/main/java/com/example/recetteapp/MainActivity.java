@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
 
                         int lenArray = array.length();
                         if (lenArray > 0) {
-                            Utils.productList.clear();
+
                             for (; jIndex < lenArray; jIndex++) {
 
                                 /**
