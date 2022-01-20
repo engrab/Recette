@@ -4,7 +4,6 @@ package com.example.recetteapp;
 import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -39,8 +38,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 
 import com.bumptech.glide.Glide;
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -69,6 +66,14 @@ import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
+import com.mazenrashed.printooth.Printooth;
+import com.mazenrashed.printooth.data.printable.Printable;
+import com.mazenrashed.printooth.data.printable.RawPrintable;
+import com.mazenrashed.printooth.data.printable.TextPrintable;
+import com.mazenrashed.printooth.data.printer.DefaultPrinter;
+import com.mazenrashed.printooth.ui.ScanningActivity;
+import com.mazenrashed.printooth.utilities.Printing;
+import com.mazenrashed.printooth.utilities.PrintingCallback;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -89,6 +94,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumMap;
@@ -99,7 +105,7 @@ import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class ScannerActivity extends AppCompatActivity {
+public class ScannerActivity extends AppCompatActivity implements PrintingCallback {
 
 
     public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
@@ -118,7 +124,7 @@ public class ScannerActivity extends AppCompatActivity {
     int userPos = -1;
 
     ImageView ivImage;
-    TextView tvName,  tvPrice;
+    TextView tvName, tvPrice;
     String userId;
     int userBalance;
     String productId;
@@ -134,6 +140,86 @@ public class ScannerActivity extends AppCompatActivity {
 
     private static final String STATE_QRCODE = MainActivity.class.getName();
     private static final String STATE_QRCODEFORMAT = "format";
+
+    Printing printing;
+
+    @Override
+    public void connectingWithPrinter() {
+        Toast.makeText(ScannerActivity.this, "Connecting to Printer", Toast.LENGTH_SHORT).show();
+
+    }
+
+    @Override
+    public void connectionFailed(String s) {
+
+        Toast.makeText(ScannerActivity.this, "Failed" + s, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onError(String s) {
+
+        Toast.makeText(ScannerActivity.this, "Error" + s, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onMessage(String s) {
+
+        Toast.makeText(ScannerActivity.this, s, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void printingOrderSentSuccessfully() {
+
+        Toast.makeText(ScannerActivity.this, "Order Sent to Printer", Toast.LENGTH_SHORT).show();
+    }
+
+    private void initPrinter() {
+
+        if (!Printooth.INSTANCE.hasPairedPrinter()) {
+            printing = Printooth.INSTANCE.printer();
+        }
+        if (printing != null) {
+            printing.setPrintingCallback(this);
+
+        }
+        printInvoice();
+    }
+
+    private void connectToPrinter() {
+        if (!Printooth.INSTANCE.hasPairedPrinter()) {
+            startActivityForResult(new Intent(this, ScanningActivity.class), ScanningActivity.SCANNING_FOR_PRINTER);
+        } else {
+            printInvoice();
+        }
+    }
+
+    private void printInvoice() {
+        ArrayList<Printable> printables = new ArrayList<>();
+        printables.add(new RawPrintable.Builder(new byte[]{27, 100, 4}).build());
+
+        // Add Custom Text here
+
+        printables.add(new TextPrintable.Builder()
+                .setText("Recette App Production")
+                .setLineSpacing(DefaultPrinter.Companion.getLINE_SPACING_60())
+                .setAlignment(DefaultPrinter.Companion.getALIGNMENT_CENTER())
+                .setEmphasizedMode(DefaultPrinter.Companion.getEMPHASIZED_MODE_BOLD())
+                .setUnderlined(DefaultPrinter.Companion.getUNDERLINED_MODE_ON())
+                .build());
+
+        // Add Text here
+        printables.add(new TextPrintable.Builder()
+                .setText("Product: "+Utils.productList.get(pos).getName()
+                        +"Prince: "+Utils.productList.get(pos).getPrice()
+                        +"\n"
+                        +"Total: "+Utils.productList.get(pos).getPrice())
+                .setCharacterCode(DefaultPrinter.Companion.getCHARCODE_PC1252())
+                .setNewLinesAfter(1)
+                .build()
+        );
+
+        printing.print(printables);
+    }
 
 
     /**
@@ -159,9 +245,11 @@ public class ScannerActivity extends AppCompatActivity {
         generalHandler = new GeneralHandler(this);
 
         setContentView(R.layout.activity_scanner);
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         initView();
-
+        if (printing != null) {
+            printing.setPrintingCallback(this);
+        }
 
 
         //If the device were rotated then restore information
@@ -223,14 +311,14 @@ public class ScannerActivity extends AppCompatActivity {
 
         if (Integer.parseInt(Utils.userList.get(userPos).getBalance()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
             // balance is greater than product price
-            if (Utils.userList.get(i).getDate().equals(dateConverter())){
+            if (Utils.userList.get(i).getDate().equals(dateConverter())) {
                 if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
                     if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
                         // product quantity is available
                         // To Do
                         // descrease quantity and balance
 
-                        finalRemain = Integer.parseInt(Utils.userList.get(i).getRemain())-Integer.parseInt(Utils.productList.get(pos).getPrice());
+                        finalRemain = Integer.parseInt(Utils.userList.get(i).getRemain()) - Integer.parseInt(Utils.productList.get(pos).getPrice());
 
                         updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
 
@@ -241,17 +329,17 @@ public class ScannerActivity extends AppCompatActivity {
                 } else {
                     reachLimitToday();
                 }
-            }else {
+            } else {
 
-                    if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
+                if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
 
-                        finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit())-Integer.parseInt(Utils.productList.get(pos).getPrice());
+                    finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit()) - Integer.parseInt(Utils.productList.get(pos).getPrice());
 
-                        updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
+                    updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
 
-                    } else {
-                        itemNotAvailableDialoge();
-                    }
+                } else {
+                    itemNotAvailableDialoge();
+                }
 
             }
 
@@ -286,7 +374,7 @@ public class ScannerActivity extends AppCompatActivity {
 
 
         dialog = new ProgressDialog(ScannerActivity.this);
-        dialog.setTitle("Hi Wait Please..." );
+        dialog.setTitle("Hi Wait Please...");
         dialog.setMessage("I am Update your record");
         dialog.setCancelable(false);
         dialog.show();
@@ -316,7 +404,7 @@ public class ScannerActivity extends AppCompatActivity {
         for (int j = 0; j <= response.getValues().size() - 1; j++) {
             Log.d(TAG, "getRowIndex: " + values.get(j).get(0));
             if (values.get(j).get(0).equals(id)) {
-                Log.d(TAG, "There is a match! j= " + j+" id: "+id);
+                Log.d(TAG, "There is a match! j= " + j + " id: " + id);
                 rowIndex = j;
                 return rowIndex;
             }
@@ -443,12 +531,20 @@ public class ScannerActivity extends AppCompatActivity {
 
                 // Specifying a listener allows you to take an action before dismissing the dialog.
                 // The dialog is automatically dismissed when a dialog button is clicked.
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                .setPositiveButton("Print", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
 
+                        dialog.dismiss();
                         isStoragePermissionGranted();
-//                        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
-//                        finish();
+                        connectToPrinter();
+
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        isStoragePermissionGranted();
                     }
                 })
 
@@ -458,12 +554,11 @@ public class ScannerActivity extends AppCompatActivity {
 
     public boolean isStoragePermissionGranted() {
         if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 Log.v(TAG, "Permission is granted");
                 createPdf();
                 return true;
-            }
-            else {
+            } else {
                 Log.v(TAG, "Permission is revoked");
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
                 return false;
@@ -480,7 +575,7 @@ public class ScannerActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode){
+        switch (requestCode) {
             case 1:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
@@ -495,7 +590,6 @@ public class ScannerActivity extends AppCompatActivity {
                     //resume tasks needing this permission
                     break;
                 }
-
 
 
         }
@@ -576,7 +670,6 @@ public class ScannerActivity extends AppCompatActivity {
         super.onResume();
 
 
-
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
 
@@ -635,6 +728,12 @@ public class ScannerActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == ScanningActivity.SCANNING_FOR_PRINTER && resultCode == Activity.RESULT_OK) {
+
+            initPrinter();
+        }
+
         if (result != null) {
             if (result.getContents() == null) {
                 finish();
@@ -654,6 +753,7 @@ public class ScannerActivity extends AppCompatActivity {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
+
 
     public void zxingScan() {
         IntentIntegrator integrator = new IntentIntegrator(activity);
@@ -736,10 +836,11 @@ public class ScannerActivity extends AppCompatActivity {
 
     public String dateConverter() {
 
-       Calendar calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy");
         return simpleDateFormat.format(calendar.getTime()).toString();
     }
+
 
     class GetUserInfo extends AsyncTask<Void, Void, Void> {
 
@@ -762,7 +863,7 @@ public class ScannerActivity extends AppCompatActivity {
                 jIndex = x;
 
             dialog = new ProgressDialog(ScannerActivity.this);
-            dialog.setTitle("Please Wait..." );
+            dialog.setTitle("Please Wait...");
             dialog.setMessage("I am getting your Data");
             dialog.setCancelable(false);
             dialog.show();
@@ -856,7 +957,7 @@ public class ScannerActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if (dialog.isShowing()){
+            if (dialog.isShowing()) {
 
                 dialog.dismiss();
             }
@@ -887,9 +988,9 @@ public class ScannerActivity extends AppCompatActivity {
             postDataParams.put("date", dateTime);
             postDataParams.put("remain", finalRemain);
 
-            postDataParams.put("uname",Utils.userList.get(userPos).getName());
-            postDataParams.put("price",Utils.productList.get(pos).getPrice());
-            postDataParams.put("pname",Utils.productList.get(pos).getName());
+            postDataParams.put("uname", Utils.userList.get(userPos).getName());
+            postDataParams.put("price", Utils.productList.get(pos).getPrice());
+            postDataParams.put("pname", Utils.productList.get(pos).getName());
 
             new SendRequest().execute();
 
@@ -960,12 +1061,11 @@ public class ScannerActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            if (dialog.isShowing()){
+            if (dialog.isShowing()) {
                 dialog.dismiss();
             }
-                successfullyDialoge();
-                Log.d(TAG, "onPostExecute: " + result);
-
+            successfullyDialoge();
+            Log.d(TAG, "onPostExecute: " + result);
 
 
         }
@@ -1046,13 +1146,13 @@ public class ScannerActivity extends AppCompatActivity {
         pdfDocument.finishPage(page);
 
 
-        String fileName = "User" + Calendar.getInstance().getTimeInMillis()+ ".pdf";
+        String fileName = "User" + Calendar.getInstance().getTimeInMillis() + ".pdf";
         File file = new File(android.os.Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/", fileName);
         try {
             if (!file.exists()) {
                 file.getParentFile().mkdirs();
                 pdfDocument.writeTo(new FileOutputStream(file));
-            }else {
+            } else {
                 pdfDocument.writeTo(new FileOutputStream(file));
 
             }
@@ -1061,13 +1161,14 @@ public class ScannerActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         pdfDocument.close();
-        printPDF(fileName);
-
+//        printPDF(fileName);
 
 
         isRefresh = true;
 
     }
+
+
 
 
     private void printPDF(String fileName) {
