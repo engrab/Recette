@@ -56,5 +56,5 @@ dependencies {
     implementation 'de.hdodenhof:circleimageview:3.1.0'
 
     // printer
-    implementation 'com.github.mazenrashed:Printooth:1.2.2'
+    implementation 'com.github.mazenrashed:Printooth:1.2.1'
 }

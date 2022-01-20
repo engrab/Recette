@@ -536,7 +536,7 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
 
                         dialog.dismiss();
                         isStoragePermissionGranted();
-                        connectToPrinter();
+//                        connectToPrinter();
 
                     }
                 })
@@ -544,7 +544,7 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
-                        isStoragePermissionGranted();
+//                        isStoragePermissionGranted();
                     }
                 })
 
@@ -829,10 +829,6 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
         }
     }
 
-    public void goBack(View view) {
-        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
-        finish();
-    }
 
     public String dateConverter() {
 
@@ -1161,7 +1157,7 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
             e.printStackTrace();
         }
         pdfDocument.close();
-//        printPDF(fileName);
+        printPDF(fileName);
 
 
         isRefresh = true;
