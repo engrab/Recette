@@ -1,13 +1,9 @@
 package com.example.recetteapp;
 
 import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -19,23 +15,20 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-
+public class CheckoutAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     List<ProductModel> modelList;
     Context context;
-    private final SelectItemListener selectItemListener;
 
-    public ProductArrayAdapter(Context context, List<ProductModel> modelList) {
+    public CheckoutAdapter(Context context, List<ProductModel> modelList) {
         this.modelList = modelList;
         this.context = context;
-        selectItemListener = (SelectItemListener) context;
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.item_menu_list, parent, false));
+        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.item_checkout, parent, false));
     }
 
     @Override
@@ -49,16 +42,15 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             // one drive image . only put image id on image coulumn
             Glide.with(context).load("https://drive.google.com/uc?export=view&id="+modelList.get(position).getImages()).into(((ViewHolder) holder).image); // for one drive images ....
 //        Glide.with(context).load(item.getImages()).into(holder.image);    // for other images
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
+
+            ((ViewHolder) holder).ivRemove.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
-                    Utils.checkOutList.add(modelList.get(position));
-                    selectItemListener.selectItem();
-
-
+                    modelList.remove(position);
+                    notifyDataSetChanged();
                 }
             });
+
         }
 
 
@@ -77,6 +69,7 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         public CircleImageView image;
         public  TextView price;
         public  TextView quantity;
+        public  CircleImageView ivRemove;
 
 
         public ViewHolder(@NonNull View itemView) {
@@ -86,9 +79,8 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             image = itemView.findViewById(R.id.ivMenu);
             quantity = itemView.findViewById(R.id.tvMenuItems);
             price = itemView.findViewById(R.id.tvMenuPrice);
+            ivRemove = itemView.findViewById(R.id.ivRemove);
         }
 
     }
-
-
 }
