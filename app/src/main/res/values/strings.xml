@@ -6,5 +6,7 @@
     <string name="xzing_label">Activate the flashlight using the volume keys</string>
     <string name="username">User Name</string>
     <string name="password">Password</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>
