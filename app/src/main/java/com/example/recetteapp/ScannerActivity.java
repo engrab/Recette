@@ -120,7 +120,7 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
     MultiFormatWriter multiFormatWriter;
     final Activity activity = this;
     private String qrcode = "", qrcodeFormat = "";
-    int pos = -1;
+    int totalPrice = -1;
     int userPos = -1;
 
     ImageView ivImage;
@@ -128,6 +128,7 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
     String userId;
     int userBalance;
     String productId;
+    String productNames;
     int productQuantity;
     Sheets sheetsService = null;
 
@@ -209,10 +210,10 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
 
         // Add Text here
         printables.add(new TextPrintable.Builder()
-                .setText("Product: "+Utils.productList.get(pos).getName()
-                        +"Prince: "+Utils.productList.get(pos).getPrice()
+                .setText("Product: "+Utils.productList.get(totalPrice).getName()
+                        +"Prince: "+Utils.productList.get(totalPrice).getPrice()
                         +"\n"
-                        +"Total: "+Utils.productList.get(pos).getPrice())
+                        +"Total: "+Utils.productList.get(totalPrice).getPrice())
                 .setCharacterCode(DefaultPrinter.Companion.getCHARCODE_PC1252())
                 .setNewLinesAfter(1)
                 .build()
@@ -247,9 +248,13 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
         setContentView(R.layout.activity_scanner);
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         initView();
+        for (int i = 0; i<Utils.checkOutList.size(); i++){
+            productNames = Utils.checkOutList.get(i).getName()+" , ";
+        }
         if (printing != null) {
             printing.setPrintingCallback(this);
         }
+
 
 
         //If the device were rotated then restore information
@@ -309,33 +314,30 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
 
     private void deductBalanceQuantity(int i) {
 
-        if (Integer.parseInt(Utils.userList.get(userPos).getBalance()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
+        if (Integer.parseInt(Utils.userList.get(userPos).getBalance()) >= totalPrice) {
             // balance is greater than product price
             if (Utils.userList.get(i).getDate().equals(dateConverter())) {
-                if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= Integer.parseInt(Utils.productList.get(pos).getPrice())) {
-                    if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
-                        // product quantity is available
-                        // To Do
-                        // descrease quantity and balance
+                if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= totalPrice) {
 
-                        finalRemain = Integer.parseInt(Utils.userList.get(i).getRemain()) - Integer.parseInt(Utils.productList.get(pos).getPrice());
 
-                        updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
+                        // descrease  balance
 
-                    } else {
-                        itemNotAvailableDialoge();
-                    }
+                        finalRemain = Integer.parseInt(Utils.userList.get(i).getRemain()) - totalPrice;
+
+                        updateGoogleSheet(Utils.userList.get(i).getId(), i);
+
+
 
                 } else {
                     reachLimitToday();
                 }
             } else {
 
-                if (Integer.parseInt(Utils.productList.get(pos).getQuantity()) > 0) {
+                if (Integer.parseInt(Utils.productList.get(totalPrice).getQuantity()) > 0) {
 
-                    finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit()) - Integer.parseInt(Utils.productList.get(pos).getPrice());
+                    finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit()) - Integer.parseInt(Utils.productList.get(totalPrice).getPrice());
 
-                    updateGoogleSheet(Utils.productList.get(pos).getId(), Utils.userList.get(i).getId(), i);
+                    updateGoogleSheet(Utils.productList.get(totalPrice).getId(), Utils.userList.get(i).getId(), i);
 
                 } else {
                     itemNotAvailableDialoge();
@@ -351,12 +353,12 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
 
     }
 
-    private void updateGoogleSheet(String productId, String userId, int i) {
+    private void updateGoogleSheet(String userId, int i) {
 
-        int quantity = Integer.parseInt(Utils.productList.get(pos).getQuantity());
+        int quantity = Integer.parseInt(Utils.productList.get(totalPrice).getQuantity());
         quantity = quantity - 1;
         int balance = Integer.parseInt(Utils.userList.get(i).getBalance());
-        balance = balance - Integer.parseInt(Utils.productList.get(pos).getPrice());
+        balance = balance - Integer.parseInt(Utils.productList.get(totalPrice).getPrice());
 
         insertData(quantity, balance, productId, userId);
 
@@ -493,7 +495,7 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    finalRowProductNumber = Integer.parseInt(Utils.productList.get(pos).getId()) + 1;
+                    finalRowProductNumber = Integer.parseInt(Utils.productList.get(totalPrice).getId()) + 1;
                     finalQuantity = quantity;
                     setDataIntoJson();
                 }
@@ -673,16 +675,12 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
 
-            pos = extras.getInt("pos");
+            totalPrice = Integer.parseInt(extras.getString("totalPrice"));
 
-            Glide.with(this).load("https://drive.google.com/uc?export=view&id=" + Utils.productList.get(pos).getImages()).into(ivImage); // for one drive images ....
+            Glide.with(this).load("https://drive.google.com/uc?export=view&id=" + Utils.productList.get(totalPrice).getImages()).into(ivImage); // for one drive images ....
 
-            tvName.setText(Utils.productList.get(pos).getName());
-            tvPrice.setText(" $ " + Utils.productList.get(pos).getPrice());
-
-
-            Log.d("TAG", "onResume: " + Utils.productList.get(pos).getName());
-
+            tvName.setText(productNames);
+            tvPrice.setText(" $ "+totalPrice);
         }
 
         if (isRefresh) {
@@ -979,14 +977,12 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
             postDataParams.put("id", SHEET_ID);
             postDataParams.put("userId", finalRowUserNumber);
             postDataParams.put("balance", finalBalance);
-            postDataParams.put("productId", finalRowProductNumber);
-            postDataParams.put("quantity", finalQuantity);
             postDataParams.put("date", dateTime);
             postDataParams.put("remain", finalRemain);
 
             postDataParams.put("uname", Utils.userList.get(userPos).getName());
-            postDataParams.put("price", Utils.productList.get(pos).getPrice());
-            postDataParams.put("pname", Utils.productList.get(pos).getName());
+            postDataParams.put("price", totalPrice);
+            postDataParams.put("pname", productNames);
 
             new SendRequest().execute();
 
@@ -1125,11 +1121,11 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
 
         // draw qty prices etc...
         canvas.drawText("1", 40, 500, paint);
-        canvas.drawText(Utils.productList.get(pos).getName(), 200, 500, paint);
-        canvas.drawText(Utils.productList.get(pos).getPrice(), 700, 500, paint);
+        canvas.drawText(Utils.productList.get(totalPrice).getName(), 200, 500, paint);
+        canvas.drawText(Utils.productList.get(totalPrice).getPrice(), 700, 500, paint);
         canvas.drawText("1", 900, 500, paint);
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 500, paint);
+        canvas.drawText(Utils.productList.get(totalPrice).getPrice(), pageWidth - 40, 500, paint);
 
 
         paint.setColor(Color.BLACK);
@@ -1137,7 +1133,7 @@ public class ScannerActivity extends AppCompatActivity implements PrintingCallba
         paint.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("Total", 700, 700, paint);
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(Utils.productList.get(pos).getPrice(), pageWidth - 40, 700, paint);
+        canvas.drawText(Utils.productList.get(totalPrice).getPrice(), pageWidth - 40, 700, paint);
 
         pdfDocument.finishPage(page);
 

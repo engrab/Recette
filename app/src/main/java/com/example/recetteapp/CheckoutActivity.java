@@ -23,7 +23,16 @@ public class CheckoutActivity extends AppCompatActivity {
         btnCheckout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(CheckoutActivity.this, ScannerActivity.class));
+                if(Utils.checkOutList.size() > 0){
+                    String tPrice = "";
+                    for (int i = 0; i<Utils.checkOutList.size(); i++){
+                        tPrice = Utils.checkOutList.get(i).getPrice();
+                    }
+
+                    Intent intent = new Intent(CheckoutActivity.this, ScannerActivity.class);
+                    intent.putExtra("totalPrice", tPrice);
+                    startActivity(intent);
+                }
             }
         });
 
