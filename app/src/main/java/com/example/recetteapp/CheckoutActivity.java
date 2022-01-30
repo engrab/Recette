@@ -24,9 +24,9 @@ public class CheckoutActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(Utils.checkOutList.size() > 0){
-                    String tPrice = "";
+                    int tPrice = 0;
                     for (int i = 0; i<Utils.checkOutList.size(); i++){
-                        tPrice = Utils.checkOutList.get(i).getPrice();
+                        tPrice = tPrice + Integer.parseInt(Utils.checkOutList.get(i).getPrice());
                     }
 
                     Intent intent = new Intent(CheckoutActivity.this, ScannerActivity.class);
