@@ -150,8 +150,8 @@ public class ScannerActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        goBack();
         super.onBackPressed();
+        goBack();
     }
 
     /**
