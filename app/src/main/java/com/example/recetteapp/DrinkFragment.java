@@ -3,10 +3,12 @@ package com.example.recetteapp;
 import static com.example.recetteapp.InternetConnection.checkConnection;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -79,17 +81,18 @@ public class DrinkFragment extends Fragment {
         View inflate = inflater.inflate(R.layout.fragment_drink, container, false);
         rv = inflate.findViewById(R.id.rv);
         noInternet = inflate.findViewById(R.id.tvNoInternet);
+
+        getItem();
+
         return inflate;
     }
-    @Override
-    public void onResume() {
-        super.onResume();
 
+    private void getItem() {
 
         if (checkConnection(requireActivity())){
             noInternet.setVisibility(View.GONE);
             new GetProducts().execute();
-            adapter = new ProductArrayAdapter(requireContext(), Utils.productList);
+            adapter = new ProductArrayAdapter(requireContext(), Utils.drinkList);
 
 
             int orientation = this.getResources().getConfiguration().orientation;
@@ -105,6 +108,18 @@ public class DrinkFragment extends Fragment {
         }else {
             noInternet.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+    }
+
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
 
     }
 
@@ -120,8 +135,8 @@ public class DrinkFragment extends Fragment {
             /**
              * Progress Dialog for User Interaction
              */
-            Utils.productList.clear();
-            x = Utils.productList.size();
+            Utils.drinkList.clear();
+            x = Utils.drinkList.size();
 
             if (x == 0)
                 jIndex = 0;
@@ -204,7 +219,7 @@ public class DrinkFragment extends Fragment {
                                 /**
                                  * Adding name and phone concatenation in List...
                                  */
-                                Utils.productList.add(model);
+                                Utils.drinkList.add(model);
                             }
                         }
                     }
@@ -225,7 +240,7 @@ public class DrinkFragment extends Fragment {
              * Checking if List size if more than zero then
              * Update ListView
              */
-            if (Utils.productList.size() > 0) {
+            if (Utils.drinkList.size() > 0) {
                 adapter.notifyDataSetChanged();
 
 

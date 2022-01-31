@@ -6,12 +6,15 @@
     android:layout_height="wrap_content"
     android:layout_marginTop="5dp"
     android:layout_marginBottom="5dp"
+    android:clickable="true"
     tools:background="@drawable/main_bg">
 
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="80dp">
+
+
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
@@ -22,7 +25,7 @@
             app:cardCornerRadius="20dp"
             app:cardElevation="3dp">
 
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
@@ -42,26 +45,29 @@
 
                 <TextView
                     android:id="@+id/tvMenuPrice"
-                    android:layout_width="match_parent"
+                    android:layout_below="@+id/tvMenuTitle"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
+                    android:layout_gravity="start"
                     android:layout_marginTop="5dp"
                     android:fontFamily="@font/opensanssemibold"
                     android:textColor="@color/colorText"
                     android:textSize="13sp"
                     tools:text="Price" />
 
+                <ImageView
+                    android:id="@+id/ivSelected"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginEnd="40dp"
+                    android:layout_marginBottom="5dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentEnd="true"
+                    app:tint="@color/purple_200"
+                    android:visibility="invisible"
+                    android:src="@drawable/ic_baseline_check_circle_outline_24" />
 
-                <TextView
-                    android:id="@+id/tvMenuItems"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:fontFamily="@font/opensanssemibold"
-                    android:text="44 Items"
-                    android:textColor="@color/colorText"
-                    android:textSize="11sp" />
-            </LinearLayout>
+            </RelativeLayout>
         </androidx.cardview.widget.CardView>
     </RelativeLayout>
 

@@ -3,10 +3,12 @@ package com.example.recetteapp;
 import static com.example.recetteapp.InternetConnection.checkConnection;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -79,18 +81,16 @@ public class FoodFragment extends Fragment {
         View inflate = inflater.inflate(R.layout.fragment_food, container, false);
         rv = inflate.findViewById(R.id.rv);
         noInternet = inflate.findViewById(R.id.tvNoInternet);
+        getItem();
         return inflate;
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
+    private void getItem() {
 
         if (checkConnection(requireActivity())){
             noInternet.setVisibility(View.GONE);
             new GetProducts().execute();
-            adapter = new ProductArrayAdapter(requireContext(), Utils.productList);
+            adapter = new ProductArrayAdapter(requireContext(), Utils.foodList);
 
 
             int orientation = this.getResources().getConfiguration().orientation;
@@ -106,6 +106,22 @@ public class FoodFragment extends Fragment {
         }else {
             noInternet.setVisibility(View.VISIBLE);
         }
+    }
+
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+
+
 
     }
 
@@ -121,8 +137,8 @@ public class FoodFragment extends Fragment {
             /**
              * Progress Dialog for User Interaction
              */
-            Utils.productList.clear();
-            x = Utils.productList.size();
+            Utils.foodList.clear();
+            x = Utils.foodList.size();
 
             if (x == 0)
                 jIndex = 0;
@@ -205,7 +221,7 @@ public class FoodFragment extends Fragment {
                                 /**
                                  * Adding name and phone concatenation in List...
                                  */
-                                Utils.productList.add(model);
+                                Utils.foodList.add(model);
                             }
                         }
                     }
@@ -226,7 +242,7 @@ public class FoodFragment extends Fragment {
              * Checking if List size if more than zero then
              * Update ListView
              */
-            if (Utils.productList.size() > 0) {
+            if (Utils.foodList.size() > 0) {
                 adapter.notifyDataSetChanged();
 
 

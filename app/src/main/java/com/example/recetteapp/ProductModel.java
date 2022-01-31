@@ -10,6 +10,21 @@ public class ProductModel implements Parcelable {
     private String images;
     private String  price;
     private String  quantity;
+    private boolean isSelected = false;
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
+    }
+
+    public static Creator<ProductModel> getCREATOR() {
+        return CREATOR;
+    }
+
+
 
     public ProductModel(String id, String name, String images, String price, String quantity) {
         this.id = id;

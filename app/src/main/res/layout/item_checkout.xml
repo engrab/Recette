@@ -51,16 +51,6 @@
                     android:textSize="13sp"
                     tools:text="Price" />
 
-
-                <TextView
-                    android:id="@+id/tvMenuItems"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:fontFamily="@font/opensanssemibold"
-                    android:text="44 Items"
-                    android:textColor="@color/colorText"
-                    android:textSize="11sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
     </RelativeLayout>

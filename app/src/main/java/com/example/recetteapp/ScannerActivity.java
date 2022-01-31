@@ -102,7 +102,7 @@ public class ScannerActivity extends AppCompatActivity {
 
     public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
     public static final String SHEET_ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
-    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGr5bybF7e4N7G2nQpPpHzQpYShsF-KGGAtd0ScVGbCPfu5yHGNio_FdT2y0PmfSj3/exec";
+    public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYUSHCOCdkz5S94eDDRGrYw2FmbtgMrKg9__AFVtvNHGn6muOwLlttOI6-eFcfUBVj/exec";
     JSONObject postDataParams;
     private static final String TAG = "ScannerActivity";
     private static final int REQUEST_CODE_STORAGE = 100;
@@ -130,7 +130,7 @@ public class ScannerActivity extends AppCompatActivity {
     boolean isRefresh = false;
 
 
-    private static final String STATE_QRCODE = MainActivity.class.getName();
+    private static final String STATE_QRCODE = ScannerActivity.class.getName();
     private static final String STATE_QRCODEFORMAT = "format";
 
 
@@ -146,6 +146,12 @@ public class ScannerActivity extends AppCompatActivity {
         savedInstanceState.putString(STATE_QRCODE, qrcode);
         savedInstanceState.putString(STATE_QRCODEFORMAT, qrcodeFormat);
 
+    }
+
+    @Override
+    public void onBackPressed() {
+        goBack();
+        super.onBackPressed();
     }
 
     /**
@@ -492,6 +498,12 @@ public class ScannerActivity extends AppCompatActivity {
         }
     }
 
+    public void goBack(){
+        Utils.checkOutList.clear();
+        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
+        finish();
+    }
+
 
     public void reachLimitToday() {
         new AlertDialog.Builder(ScannerActivity.this)
@@ -503,9 +515,8 @@ public class ScannerActivity extends AppCompatActivity {
                 // The dialog is automatically dismissed when a dialog button is clicked.
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
+                        goBack();
 
-                        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
-                        finish();
                     }
                 })
 
@@ -524,8 +535,7 @@ public class ScannerActivity extends AppCompatActivity {
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
 
-                        startActivity(new Intent(ScannerActivity.this, MainActivity.class));
-                        finish();
+                       goBack();
                     }
                 })
 
@@ -560,9 +570,8 @@ public class ScannerActivity extends AppCompatActivity {
         }
 
         if (isRefresh) {
-            startActivity(new Intent(ScannerActivity.this, MainActivity.class));
             isRefresh = false;
-            finish();
+           goBack();
         }
 
     }
@@ -1010,8 +1019,8 @@ public class ScannerActivity extends AppCompatActivity {
         paint.setTextSize(30f);
 
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("Total", pageWidth - 100, 700, paint);
-        canvas.drawText(""+totalPrice, pageWidth - 40, 700, paint);
+        canvas.drawText("Total", pageWidth - 100, 700+j, paint);
+        canvas.drawText(""+totalPrice, pageWidth - 40, 700+j, paint);
 
         pdfDocument.finishPage(page);
 
@@ -1031,7 +1040,6 @@ public class ScannerActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         pdfDocument.close();
-        Utils.checkOutList.clear();
         printPDF(fileName);
 
 

@@ -37,7 +37,6 @@ public class CheckoutAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         if (holder instanceof ViewHolder){
             ((ViewHolder) holder).name.setText(modelList.get(position).getName());
             ((ViewHolder) holder).price.setText(" $ "+modelList.get(position).getPrice());
-            ((ViewHolder) holder).quantity.setText(modelList.get(position).getQuantity()+" ITEMS");
 
             // one drive image . only put image id on image coulumn
             Glide.with(context).load("https://drive.google.com/uc?export=view&id="+modelList.get(position).getImages()).into(((ViewHolder) holder).image); // for one drive images ....
@@ -68,7 +67,6 @@ public class CheckoutAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         public  TextView name;
         public CircleImageView image;
         public  TextView price;
-        public  TextView quantity;
         public  CircleImageView ivRemove;
 
 
@@ -77,7 +75,6 @@ public class CheckoutAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
             name = itemView.findViewById(R.id.tvMenuTitle);
             image = itemView.findViewById(R.id.ivMenu);
-            quantity = itemView.findViewById(R.id.tvMenuItems);
             price = itemView.findViewById(R.id.tvMenuPrice);
             ivRemove = itemView.findViewById(R.id.ivRemove);
         }

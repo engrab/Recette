@@ -2,6 +2,7 @@ package com.example.recetteapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,9 +43,12 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
         if (holder instanceof ViewHolder){
+            ProductModel productModel = modelList.get(position);
+
+            ((ViewHolder) holder).ivSelected.setVisibility(productModel.isSelected() ? View.VISIBLE : View.INVISIBLE);
+
             ((ViewHolder) holder).name.setText(modelList.get(position).getName());
             ((ViewHolder) holder).price.setText(" $ "+modelList.get(position).getPrice());
-            ((ViewHolder) holder).quantity.setText(modelList.get(position).getQuantity()+" ITEMS");
 
             // one drive image . only put image id on image coulumn
             Glide.with(context).load("https://drive.google.com/uc?export=view&id="+modelList.get(position).getImages()).into(((ViewHolder) holder).image); // for one drive images ....
@@ -53,9 +57,20 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 @Override
                 public void onClick(View v) {
 
-                    Utils.checkOutList.add(modelList.get(position));
-                    selectItemListener.selectItem();
+                    if (!productModel.isSelected()) {
 
+                        productModel.setSelected(true);
+                        Utils.checkOutList.add(modelList.get(position));
+                        selectItemListener.selectItem();
+                        ((ViewHolder) holder).ivSelected.setVisibility(productModel.isSelected() ? View.VISIBLE : View.INVISIBLE);
+
+                    }else {
+                        productModel.setSelected(false);
+                        Utils.checkOutList.remove(modelList.get(position));
+                        selectItemListener.selectItem();
+                        ((ViewHolder) holder).ivSelected.setVisibility(productModel.isSelected() ? View.VISIBLE : View.INVISIBLE);
+                    }
+                    notifyDataSetChanged();
 
                 }
             });
@@ -76,16 +91,18 @@ public class ProductArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         public  TextView name;
         public CircleImageView image;
         public  TextView price;
-        public  TextView quantity;
+        public ImageView ivSelected;
+        View view;
 
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            view = itemView;
 
             name = itemView.findViewById(R.id.tvMenuTitle);
             image = itemView.findViewById(R.id.ivMenu);
-            quantity = itemView.findViewById(R.id.tvMenuItems);
             price = itemView.findViewById(R.id.tvMenuPrice);
+            ivSelected = itemView.findViewById(R.id.ivSelected);
         }
 
     }

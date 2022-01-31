@@ -17,7 +17,7 @@
         <entry key="app/src/main/res/layout/fragment_food.xml" value="0.32916666666666666" />
         <entry key="app/src/main/res/layout/fragment_list.xml" value="0.32708333333333334" />
         <entry key="app/src/main/res/layout/item_checkout.xml" value="0.32277834525025534" />
-        <entry key="app/src/main/res/layout/item_menu_list.xml" value="0.33125" />
+        <entry key="app/src/main/res/layout/item_menu_list.xml" value="0.25" />
         <entry key="app/src/main/res/layout/layout_row_view.xml" value="0.32708333333333334" />
         <entry key="app/src/main/res/menu/menu_checkout.xml" value="0.32916666666666666" />
         <entry key="app/src/main/res/menu/menu_main.xml" value="0.2935185185185185" />
