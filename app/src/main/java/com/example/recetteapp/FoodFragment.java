@@ -159,7 +159,7 @@ public class FoodFragment extends Fragment {
             /**
              * Getting JSON Object from Web Using okHttp
              */
-            JSONObject jsonObject = JSONparser.getProductFromWeb();
+            JSONObject jsonObject = JSONparser.getFoodFromSheet();
 
             try {
                 /**
@@ -173,7 +173,7 @@ public class FoodFragment extends Fragment {
                         /**
                          * Getting Array named "contacts" From MAIN Json Object
                          */
-                        JSONArray array = jsonObject.getJSONArray(Keys.SHEET_PRODUCTS);
+                        JSONArray array = jsonObject.getJSONArray(Keys.SHEET_FOOD);
 
                         /**
                          * Check Length of Array...

@@ -428,7 +428,7 @@ public class ScannerActivity extends AppCompatActivity {
 
     public void successfullyDialoge() {
         new AlertDialog.Builder(ScannerActivity.this)
-                .setTitle("Successfully")
+                .setTitle("🍟 🍔 Successfully 🍟 🍔")
                 .setMessage("Your Transation is completed")
                 .setCancelable(false)
 
@@ -447,6 +447,7 @@ public class ScannerActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
+                        goBack();
 //                        isStoragePermissionGranted();
                     }
                 })
@@ -1019,8 +1020,8 @@ public class ScannerActivity extends AppCompatActivity {
         paint.setTextSize(30f);
 
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("Total", pageWidth - 100, 700+j, paint);
-        canvas.drawText(""+totalPrice, pageWidth - 40, 700+j, paint);
+        canvas.drawText("Total", pageWidth - 100, 600+j, paint);
+        canvas.drawText(""+totalPrice, pageWidth - 40, 600+j, paint);
 
         pdfDocument.finishPage(page);
 

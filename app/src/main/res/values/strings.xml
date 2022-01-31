@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">RecetteApp</string>
+    <string name="app_name">Recete App</string>
     <string name="title_format">Code Formate</string>
     <string name="error_code_not_found">Code Not Found</string>
     <string name="error_file_not_found">File Not Found</string>

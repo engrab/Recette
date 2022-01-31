@@ -25,11 +25,24 @@ public class JSONparser {
 
     private static Response response;
 
-    public static JSONObject getProductFromWeb() {
+    public static JSONObject getFoodFromSheet() {
         try {
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder()
-                    .url(MAIN_URL+"products")
+                    .url(MAIN_URL+Keys.SHEET_FOOD)
+                    .build();
+            response = client.newCall(request).execute();
+            return new JSONObject(response.body().string());
+        } catch (@NonNull IOException | JSONException e) {
+            Log.e(TAG, "" + e.getLocalizedMessage());
+        }
+        return null;
+    }
+    public static JSONObject getDrinkFromSheet() {
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(MAIN_URL+Keys.SHEET_DRINK)
                     .build();
             response = client.newCall(request).execute();
             return new JSONObject(response.body().string());

@@ -3,7 +3,8 @@ package com.example.recetteapp;
 
 public class Keys {
 
-    public static final String SHEET_PRODUCTS = "products";
+    public static final String SHEET_FOOD = "food";
+    public static final String SHEET_DRINK = "drink";
     public static final String SHEET_EMPOLYEES = "employees";
 
     public static final String KEY_PRODUCTS_ID = "id";
