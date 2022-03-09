@@ -4,6 +4,10 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="app/src/main/res/drawable/circle.xml" value="0.3494791666666667" />
+        <entry key="app/src/main/res/drawable/circle_back.xml" value="0.1" />
+        <entry key="app/src/main/res/drawable/ic_arrow.xml" value="0.1" />
+        <entry key="app/src/main/res/drawable/ic_baseline_attach_money_24.xml" value="0.1" />
+        <entry key="app/src/main/res/drawable/ic_baseline_shopping_cart_checkout_24.xml" value="0.212" />
         <entry key="app/src/main/res/drawable/ic_share_24dp.xml" value="0.19270833333333334" />
         <entry key="app/src/main/res/drawable/image_elevation.xml" value="0.3515625" />
         <entry key="app/src/main/res/drawable/main_bg.xml" value="0.3515625" />

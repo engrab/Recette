@@ -4,20 +4,43 @@ function doGet(e) {
 function doPost(e) {
   return ManageSheet(e);
 }
-function ManageSheet(e) {
 
+function ManageSheet(e) {
+  var output  = ContentService.createTextOutput();
   var id = e.parameter.id;
   var userId = e.parameter.userId;
   var balance = e.parameter.balance;
   var productId = e.parameter.productId;
-  var quantity = e.parameter.quantity;
+  //var quantity = e.parameter.quantity;
+  var date = e.parameter.date;
+  var remain = e.parameter.remain;
+  var pname = e.parameter.pname;
+  var price = e.parameter.price;
+  var uname = e.parameter.uname;
 
   var ss= SpreadsheetApp.openById(id);
   var sheetemp=ss.getSheetByName("employees");
   sheetemp.getRange("E"+parseInt(userId)).setValue(balance);
-  var sheetproduct=ss.getSheetByName("products");
-  sheetproduct.getRange("E"+parseInt(productId)).setValue(quantity);
- // SpreadsheetApp.getActiveSpreadsheet().getSheetByName("employees").getRange("E"+e.parameter.userId).setValue(balance);
+  var sheetdate=ss.getSheetByName("employees");
+  sheetdate.getRange("F"+parseInt(userId)).setValue(date);
+   var sheetremain=ss.getSheetByName("employees");
+  sheetremain.getRange("H"+parseInt(userId)).setValue(remain);
+  // var sheetproduct=ss.getSheetByName("products");
+  // sheetproduct.getRange("E"+parseInt(productId)).setValue(quantity);
+  var sheetmail=ss.getSheetByName("employees");
+   GmailApp.sendEmail(sheetmail.getRange("C"+parseInt(userId)).getValue(), "Recette App", "Detect from your account : "+price);
+ 
+  var sheetreport=ss.getSheetByName("report");
+  sheetreport.appendRow([date, uname, pname, price]);
 
+    var callback = request.parameters.callback;
+  if (callback === undefined) {
+    output.setContent(JSON.stringify("Success"));
+  } else {
+    output.setContent(callback + "(" + JSON.stringify("Success") + ")");
+  }
+
+  output.setMimeType(ContentService.MimeType.JSON);
   
+  return output;
 }

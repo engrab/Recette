@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/ic_login_background">
+    android:background="@color/purple_500">
 
 
     <LinearLayout
@@ -14,6 +14,10 @@
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tab_layout"
+            app:tabSelectedTextColor="#fff"
+            app:tabTextColor="#fff"
+            app:tabIndicatorColor="#fff"
+            app:tabMode="fixed"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
@@ -34,7 +38,7 @@
         android:layout_marginEnd="16dp"
         android:padding="10dp"
         android:text="0"
-        android:textColor="#FF0000"
+        android:textColor="@color/white"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -47,7 +51,7 @@
         android:layout_gravity="bottom|right"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        app:backgroundTint="@color/purple_500"
+        app:backgroundTint="@color/white"
         app:srcCompat="@drawable/ic_baseline_shopping_cart_checkout_24" />
 
 </RelativeLayout>
