@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.widget.Toast;
 
+import com.example.recetteapp.ProductModel;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.woosim.printer.WoosimCmd;
@@ -14,16 +15,16 @@ import java.util.List;
 public class TestPrinter implements IPrintToPrinter {
 
 
-    String name, price, qty, weight, totalPrice;
+    String name, price, qty, totalPrice;
     double cost_total, subTotal;
     DecimalFormat f;
 
     private Context context;
-    List<OrderDetails> orderDetailsList;
+    List<ProductModel> orderDetailsList;
     String currency, servedBy, shopName, shopAddress, shopEmail, shopContact, invoiceId, orderDate, orderTime, customerName, footer, tax, discount;
     Bitmap bm;
 
-    public TestPrinter(Context context, String shopName, String shopAddress, String shopEmail, String shopContact, String invoiceId, String orderDate, String orderTime, String customerName, String footer, double subTotal, String totalPrice, String tax, String discount, String currency, String served_by, List<OrderDetails> orderDetailsList) {
+    public TestPrinter(Context context, String shopName, String shopAddress, String shopEmail, String shopContact, String invoiceId, String orderDate, String orderTime, String customerName, String footer, double subTotal, String totalPrice, String tax, String discount, String currency, String served_by, List<ProductModel> orderDetailsList) {
         this.context = context;
         this.shopName = shopName;
         this.shopAddress = shopAddress;
@@ -78,12 +79,11 @@ public class TestPrinter implements IPrintToPrinter {
         double getItemPrice;
 
         for (int i = 0; i < orderDetailsList.size(); i++) {
-            name = orderDetailsList.get(i).getProductName();
-            price = orderDetailsList.get(i).getProductPrice();
+            name = orderDetailsList.get(i).getName();
+            price = orderDetailsList.get(i).getPrice();
             getItemPrice = Double.parseDouble(price);
 
-            qty = orderDetailsList.get(i).getProductQuantity();
-            weight = orderDetailsList.get(i).getProductWeight();
+            qty = orderDetailsList.get(i).getQuantity();
 
             cost_total = Integer.parseInt(qty) * Double.parseDouble(price);
 

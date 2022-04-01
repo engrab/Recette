@@ -93,7 +93,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumMap;
@@ -127,7 +126,7 @@ public class ScannerActivity extends AppCompatActivity {
     String userId;
     int userBalance;
     String productId;
-    String productNames="";
+    String productNames = "";
     int productQuantity;
     Sheets sheetsService = null;
 
@@ -142,8 +141,6 @@ public class ScannerActivity extends AppCompatActivity {
 
     private static final int REQUEST_CONNECT = 100;
     private WoosimPrnMng mPrnMng = null;
-
-
 
 
     /**
@@ -177,15 +174,14 @@ public class ScannerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_scanner);
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         initView();
-        for (int i = 0; i<Utils.checkOutList.size(); i++){
-            if (i==0){
+        for (int i = 0; i < Utils.checkOutList.size(); i++) {
+            if (i == 0) {
                 productNames = Utils.checkOutList.get(i).getName();
-            }else {
-                productNames = productNames +" , "+ Utils.checkOutList.get(i).getName();
+            } else {
+                productNames = productNames + " , " + Utils.checkOutList.get(i).getName();
 
             }
         }
-
 
 
         //If the device were rotated then restore information
@@ -251,12 +247,11 @@ public class ScannerActivity extends AppCompatActivity {
                 if (Integer.parseInt(Utils.userList.get(userPos).getRemain()) >= totalPrice) {
 
 
-                        // descrease  balance
+                    // descrease  balance
 
-                        finalRemain = Integer.parseInt(Utils.userList.get(i).getRemain()) - totalPrice;
+                    finalRemain = Integer.parseInt(Utils.userList.get(i).getRemain()) - totalPrice;
 
-                        updateGoogleSheet(Utils.userList.get(i).getId(), i);
-
+                    updateGoogleSheet(Utils.userList.get(i).getId(), i);
 
 
                 } else {
@@ -264,9 +259,9 @@ public class ScannerActivity extends AppCompatActivity {
                 }
             } else {
 
-                    finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit()) - totalPrice;
+                finalRemain = Integer.parseInt(Utils.userList.get(i).getLimit()) - totalPrice;
 
-                    updateGoogleSheet(Utils.userList.get(i).getId(), i);
+                updateGoogleSheet(Utils.userList.get(i).getId(), i);
 
 
             }
@@ -304,7 +299,6 @@ public class ScannerActivity extends AppCompatActivity {
         dialog.setMessage("I am Update your record");
         dialog.setCancelable(false);
         dialog.show();
-
 
 
         Thread thread = new Thread() {
@@ -508,7 +502,7 @@ public class ScannerActivity extends AppCompatActivity {
         }
     }
 
-    public void goBack(){
+    public void goBack() {
         Utils.checkOutList.clear();
         startActivity(new Intent(ScannerActivity.this, MainActivity.class));
         finish();
@@ -545,7 +539,7 @@ public class ScannerActivity extends AppCompatActivity {
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
 
-                       goBack();
+                        goBack();
                     }
                 })
 
@@ -576,12 +570,12 @@ public class ScannerActivity extends AppCompatActivity {
             Glide.with(this).load("https://drive.google.com/uc?export=view&id=" + Utils.checkOutList.get(0).getImages()).into(ivImage); // for one drive images ....
 
             tvName.setText(productNames);
-            tvPrice.setText(" $ "+totalPrice);
+            tvPrice.setText(" $ " + totalPrice);
         }
 
         if (isRefresh) {
             isRefresh = false;
-           goBack();
+            goBack();
         }
 
     }
@@ -623,23 +617,37 @@ public class ScannerActivity extends AppCompatActivity {
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
 
         if (result != null) {
-            if (result.getContents() == null) {
-                finish();
+            if (requestCode == REQUEST_CONNECT && resultCode == RESULT_OK) {
+                try {
+                    //Get device address to print to.
+                    String blutoothAddr = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                    //The interface to print text to thermal printers.
+                    IPrintToPrinter testPrinter = new TestPrinter(this, "shopName", "shopAddress", "shopEmail", "shopContact", "invoiceId", "orderDate", "orderTime", "shortText", "longText", Double.parseDouble("10"), "20", "tax", "discount", "currency", "userName", Utils.checkOutList);
+                    //Connect to the printer and after successful connection issue the print command.
+                    mPrnMng = printerFactory.createPrnMng(this, blutoothAddr, testPrinter);
+                } catch (Exception e) {
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+                return;
             } else {
-                qrcodeFormat = result.getFormatName();
-                qrcode = result.getContents();
-                if (!qrcode.equals("")) {
+                if (result.getContents() == null) {
+                    finish();
+                } else {
+                    qrcodeFormat = result.getFormatName();
+                    qrcode = result.getContents();
+                    if (!qrcode.equals("")) {
 
-                    showQrImage();
-                    password.setVisibility(View.VISIBLE);
+                        showQrImage();
+                        password.setVisibility(View.VISIBLE);
 
+
+                    }
 
                 }
-
             }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
+
         }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
 
@@ -1009,28 +1017,25 @@ public class ScannerActivity extends AppCompatActivity {
         SimpleDateFormat simpleTimeFormat = new SimpleDateFormat("HH:mm:ss");
         canvas.drawText("Time: " + simpleTimeFormat.format(date), pageWidth - 20, 350, paint);
         int j = 0;
-        for (int i = 0; i < Utils.checkOutList.size(); i++){
+        for (int i = 0; i < Utils.checkOutList.size(); i++) {
 
             // draw qty prices etc...
-            canvas.drawText("1", 40, 500+j, paint);
-            canvas.drawText(Utils.checkOutList.get(i).getName(), 200, 500+j, paint);
-            canvas.drawText(Utils.checkOutList.get(i).getPrice(), 700, 500+j, paint);
-            canvas.drawText("1", 900, 500+j, paint);
+            canvas.drawText("1", 40, 500 + j, paint);
+            canvas.drawText(Utils.checkOutList.get(i).getName(), 200, 500 + j, paint);
+            canvas.drawText(Utils.checkOutList.get(i).getPrice(), 700, 500 + j, paint);
+            canvas.drawText("1", 900, 500 + j, paint);
             paint.setTextAlign(Paint.Align.RIGHT);
-            canvas.drawText(Utils.checkOutList.get(i).getPrice(), pageWidth - 40, 500+j, paint);
-             j=j+50;
+            canvas.drawText(Utils.checkOutList.get(i).getPrice(), pageWidth - 40, 500 + j, paint);
+            j = j + 50;
         }
-
-
-
 
 
         paint.setColor(Color.BLACK);
         paint.setTextSize(30f);
 
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("Total", pageWidth - 100, 600+j, paint);
-        canvas.drawText(""+totalPrice, pageWidth - 40, 600+j, paint);
+        canvas.drawText("Total", pageWidth - 100, 600 + j, paint);
+        canvas.drawText("" + totalPrice, pageWidth - 40, 600 + j, paint);
 
         pdfDocument.finishPage(page);
 
@@ -1101,24 +1106,7 @@ public class ScannerActivity extends AppCompatActivity {
 //        return rows;
 //    }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (requestCode == REQUEST_CONNECT && resultCode == RESULT_OK) {
-            try {
-                //Get device address to print to.
-                String blutoothAddr = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-                //The interface to print text to thermal printers.
-                IPrintToPrinter testPrinter = new TestPrinter(this, shopName, shopAddress, shopEmail, shopContact, invoiceId, orderDate, orderTime, shortText, longText, Double.parseDouble(orderPrice), f.format(calculatedTotalPrice), tax, discount, currency, userName,orderDetails);
-                //Connect to the printer and after successful connection issue the print command.
-                mPrnMng = printerFactory.createPrnMng(this, blutoothAddr, testPrinter);
-            } catch (Exception e) {
-                Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-            }
-            return;
-        }
 
-        super.onActivityResult(requestCode, resultCode, data);
-    }
     @Override
     protected void onDestroy() {
         if (mPrnMng != null) mPrnMng.releaseAllocatoins();
