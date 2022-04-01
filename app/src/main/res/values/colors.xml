@@ -9,4 +9,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="accent">#F4C658</color>
     <color name="colorText">#2b287b</color>
+    <color name="colorTextIcons">#FFFFFF</color>
+
 </resources>

@@ -9,4 +9,20 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
+    <string name="bluetooth_not_available">Bluetooth not available</string>
+    <string name="turnon_bluetooth">Turn on Bluetooth</string>
+    <string name="title_paired_devices">Paired devices</string>
+    <string name="title_other_devices">Other devices</string>
+    <string name="button_scan">Scan devices</string>
+    <string name="none_paired">No device found</string>
+    <string name="scanning">Searching&#8230;</string>
+
+    <string name="select_device">Select device</string>
+    <string name="none_found">No device found</string>
+    <string name="connect_fail">Printer connection error</string>
+    <string name="connect_lost">Disconnected</string>
+    <string name="not_connected">Connection is not established</string>
+    <string name="connected">Connect to</string>
+    <string name="pic_load_error">Error in loading picture</string>
+
 </resources>

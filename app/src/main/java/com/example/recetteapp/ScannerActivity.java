@@ -40,6 +40,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.bumptech.glide.Glide;
+import com.example.recetteapp.pos.DeviceListActivity;
+import com.example.recetteapp.pos.IPrintToPrinter;
+import com.example.recetteapp.pos.PrefMng;
+import com.example.recetteapp.pos.TestPrinter;
+import com.example.recetteapp.pos.Tools;
+import com.example.recetteapp.pos.WoosimPrnMng;
+import com.example.recetteapp.pos.printerFactory;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -133,6 +140,8 @@ public class ScannerActivity extends AppCompatActivity {
     private static final String STATE_QRCODE = ScannerActivity.class.getName();
     private static final String STATE_QRCODEFORMAT = "format";
 
+    private static final int REQUEST_CONNECT = 100;
+    private WoosimPrnMng mPrnMng = null;
 
 
 
@@ -1041,14 +1050,80 @@ public class ScannerActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         pdfDocument.close();
-        printPDF(fileName);
+
+        //Check if the Bluetooth is available and on.
+        if (!Tools.isBlueToothOn(ScannerActivity.this)) return;
+
+        PrefMng.saveActivePrinter(ScannerActivity.this, PrefMng.PRN_WOOSIM_SELECTED);
+
+        //Pick a Bluetooth device
+        Intent i = new Intent(ScannerActivity.this, DeviceListActivity.class);
+        startActivityForResult(i, REQUEST_CONNECT);
+//        printPDF(fileName);
 
 
         isRefresh = true;
 
     }
 
+    //for pdf
+//    private ArrayList<String[]> getPDFReceipt() {
+//        ArrayList<String[]> rows = new ArrayList<>();
+//
+//        final DatabaseAccess databaseAccess = DatabaseAccess.getInstance(OrderDetailsActivity.this);
+//        databaseAccess.open();
+//
+//        String name, price, qty, weight;
+//        double costTotal;
+//
+//        for (int i = 0; i < orderDetails.size(); i++) {
+//
+//            name = orderDetails.get(i).getProductName();
+//
+//            price = orderDetails.get(i).getProductPrice();
+//            qty = orderDetails.get(i).getProductQuantity();
+//            weight = orderDetails.get(i).getProductWeight();
+//
+//            costTotal = Integer.parseInt(qty) * Double.parseDouble(price);
+//
+//            rows.add(new String[]{name + "\n" + weight + "\n" + "(" + qty + "x" + currency + price + ")", currency + costTotal});
+//
+//
+//        }
+//        rows.add(new String[]{"..........................................", ".................................."});
+//        rows.add(new String[]{"Sub Total: ", "(+)"+currency + f.format(Double.parseDouble(orderPrice))});
+//        rows.add(new String[]{"Total Tax: ", "(+)"+currency + f.format(Double.parseDouble(tax))});
+//        rows.add(new String[]{"Discount: ", "(-)"+currency + discount});
+//        rows.add(new String[]{"..........................................", ".................................."});
+//        rows.add(new String[]{"Total Price: ", currency + f.format(calculatedTotalPrice)});
+//
+////        you can add more row above format
+//        return rows;
+//    }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (requestCode == REQUEST_CONNECT && resultCode == RESULT_OK) {
+            try {
+                //Get device address to print to.
+                String blutoothAddr = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                //The interface to print text to thermal printers.
+                IPrintToPrinter testPrinter = new TestPrinter(this, shopName, shopAddress, shopEmail, shopContact, invoiceId, orderDate, orderTime, shortText, longText, Double.parseDouble(orderPrice), f.format(calculatedTotalPrice), tax, discount, currency, userName,orderDetails);
+                //Connect to the printer and after successful connection issue the print command.
+                mPrnMng = printerFactory.createPrnMng(this, blutoothAddr, testPrinter);
+            } catch (Exception e) {
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+    @Override
+    protected void onDestroy() {
+        if (mPrnMng != null) mPrnMng.releaseAllocatoins();
+        super.onDestroy();
+    }
 
 
     private void printPDF(String fileName) {
