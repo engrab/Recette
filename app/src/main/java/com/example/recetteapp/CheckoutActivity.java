@@ -32,6 +32,7 @@ public class CheckoutActivity extends AppCompatActivity {
                     Intent intent = new Intent(CheckoutActivity.this, ScannerActivity.class);
                     intent.putExtra("totalPrice", tPrice);
                     startActivity(intent);
+                    finish();
                 }
             }
         });

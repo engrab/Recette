@@ -91,6 +91,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -109,15 +110,15 @@ public class ScannerActivity extends AppCompatActivity {
     public static final String GOOGLE_API_KEY = "AIzaSyBKDrtmR7i10M7QO2njLCxaOg7o3O8SuGM";
     public static final String SHEET_ID = "1Tz6JtbZ3uo_B-Dtw1mEzVR7HaM2cjvXYIClurZ1vA74";
     public static final String SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYUSHCOCdkz5S94eDDRGrYw2FmbtgMrKg9__AFVtvNHGn6muOwLlttOI6-eFcfUBVj/exec";
-    JSONObject postDataParams;
     private static final String TAG = "ScannerActivity";
     private static final int REQUEST_CODE_STORAGE = 100;
-    private EditText password;
-    private GeneralHandler generalHandler;
+    private static final String STATE_QRCODE = ScannerActivity.class.getName();
+    private static final String STATE_QRCODEFORMAT = "format";
+    private static final int REQUEST_CONNECT = 100;
+    final Activity activity = this;
+    JSONObject postDataParams;
     Bitmap bitmap;
     MultiFormatWriter multiFormatWriter;
-    final Activity activity = this;
-    private String qrcode = "", qrcodeFormat = "";
     int totalPrice = 0;
     int userPos = -1;
 
@@ -132,14 +133,11 @@ public class ScannerActivity extends AppCompatActivity {
 
     int finalBalance, finalRemain;
     int finalRowUserNumber;
-    private ProgressDialog dialog;
     boolean isRefresh = false;
-
-
-    private static final String STATE_QRCODE = ScannerActivity.class.getName();
-    private static final String STATE_QRCODEFORMAT = "format";
-
-    private static final int REQUEST_CONNECT = 100;
+    private EditText password;
+    private GeneralHandler generalHandler;
+    private String qrcode = "", qrcodeFormat = "";
+    private ProgressDialog dialog;
     private WoosimPrnMng mPrnMng = null;
 
 
@@ -211,6 +209,16 @@ public class ScannerActivity extends AppCompatActivity {
             } else {
                 zxingScan();
             }
+        }
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+
+            totalPrice = extras.getInt("totalPrice");
+
+            Glide.with(this).load("https://drive.google.com/uc?export=view&id=" + Utils.checkOutList.get(0).getImages()).into(ivImage); // for one drive images ....
+
+            tvName.setText(productNames);
+            tvPrice.setText(" $ " + totalPrice);
         }
         findViewById(R.id.btnSubmit).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -562,17 +570,6 @@ public class ScannerActivity extends AppCompatActivity {
         super.onResume();
 
 
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-
-            totalPrice = extras.getInt("totalPrice");
-
-            Glide.with(this).load("https://drive.google.com/uc?export=view&id=" + Utils.checkOutList.get(0).getImages()).into(ivImage); // for one drive images ....
-
-            tvName.setText(productNames);
-            tvPrice.setText(" $ " + totalPrice);
-        }
-
         if (isRefresh) {
             isRefresh = false;
             goBack();
@@ -615,36 +612,35 @@ public class ScannerActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (result.getContents() == null) {
+            finish();
+        } else {
+            qrcodeFormat = result.getFormatName();
+            qrcode = result.getContents();
+            if (!qrcode.equals("")) {
 
-        if (result != null) {
-            if (requestCode == REQUEST_CONNECT && resultCode == RESULT_OK) {
-                try {
-                    //Get device address to print to.
-                    String blutoothAddr = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-                    //The interface to print text to thermal printers.
-                    IPrintToPrinter testPrinter = new TestPrinter(this, "shopName", "shopAddress", "shopEmail", "shopContact", "invoiceId", "orderDate", "orderTime", "shortText", "longText", Double.parseDouble("10"), "20", "tax", "discount", "currency", "userName", Utils.checkOutList);
-                    //Connect to the printer and after successful connection issue the print command.
-                    mPrnMng = printerFactory.createPrnMng(this, blutoothAddr, testPrinter);
-                } catch (Exception e) {
-                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-                return;
-            } else {
-                if (result.getContents() == null) {
-                    finish();
-                } else {
-                    qrcodeFormat = result.getFormatName();
-                    qrcode = result.getContents();
-                    if (!qrcode.equals("")) {
-
-                        showQrImage();
-                        password.setVisibility(View.VISIBLE);
+                showQrImage();
+                password.setVisibility(View.VISIBLE);
 
 
-                    }
-
-                }
             }
+
+        }
+
+
+        if (requestCode == REQUEST_CONNECT && resultCode == RESULT_OK) {
+            try {
+                //Get device address to print to.
+                String blutoothAddr = data.getExtras().getString(DemoActivity.EXTRA_DEVICE_ADDRESS);
+                //The interface to print text to thermal printers.
+                IPrintToPrinter testPrinter = new TestPrinter(this, "shopName", "shopAddress", "shopEmail", "shopContact", "invoiceId", "orderDate", "orderTime", "shortText", "longText", Double.parseDouble("10"), "20", "tax", "discount", "currency", "userName", Utils.checkOutList);
+                //Connect to the printer and after successful connection issue the print command.
+                mPrnMng = printerFactory.createPrnMng(this, blutoothAddr, testPrinter);
+            } catch (Exception e) {
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+            return;
+
 
         }
         super.onActivityResult(requestCode, resultCode, data);
@@ -730,9 +726,192 @@ public class ScannerActivity extends AppCompatActivity {
 
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy");
-        return simpleDateFormat.format(calendar.getTime()).toString();
+        return simpleDateFormat.format(calendar.getTime());
     }
 
+    public void setDataIntoJson() {
+        postDataParams = new JSONObject();
+        try {
+            String dateTime = dateConverter();
+            postDataParams.put("id", SHEET_ID);
+            postDataParams.put("userId", finalRowUserNumber);
+            postDataParams.put("balance", finalBalance);
+            postDataParams.put("date", dateTime);
+            postDataParams.put("remain", finalRemain);
+
+            postDataParams.put("uname", Utils.userList.get(userPos).getName());
+            postDataParams.put("price", String.valueOf(totalPrice));
+            postDataParams.put("pname", productNames);
+
+            new SendRequest().execute();
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getPostDataString(JSONObject params) throws Exception {
+
+        StringBuilder result = new StringBuilder();
+        boolean first = true;
+
+        Iterator<String> itr = params.keys();
+
+        while (itr.hasNext()) {
+
+            String key = itr.next();
+            Object value = params.get(key);
+
+            if (first)
+                first = false;
+            else
+                result.append("&");
+
+            result.append(URLEncoder.encode(key, "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+
+        }
+        return result.toString();
+    }
+
+    private void createPdf() {
+
+        float pageWidth = 500;
+        float pageHeight = 1000;
+
+
+        PdfDocument pdfDocument = new PdfDocument();
+        Paint paint = new Paint();
+        Paint titlePaint = new Paint();
+
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder((int) pageWidth, (int) pageHeight, 1).create();
+        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+
+
+        // add name of pizza
+        titlePaint.setTextAlign(Paint.Align.CENTER);
+        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        titlePaint.setTextSize(20f);
+        canvas.drawText("Recette App Production", pageWidth / 2, 200, titlePaint);
+
+
+        // date and time
+        paint.setTextAlign(Paint.Align.RIGHT);
+        paint.setTextSize(16f);
+        Date date = new Date();
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy");
+        canvas.drawText("Date: " + simpleDateFormat.format(date), pageWidth - 20, 300, paint);
+        SimpleDateFormat simpleTimeFormat = new SimpleDateFormat("HH:mm:ss");
+        canvas.drawText("Time: " + simpleTimeFormat.format(date), pageWidth - 20, 350, paint);
+        int j = 0;
+        for (int i = 0; i < Utils.checkOutList.size(); i++) {
+
+            // draw qty prices etc...
+            canvas.drawText("1", 40, 500 + j, paint);
+            canvas.drawText(Utils.checkOutList.get(i).getName(), 200, 500 + j, paint);
+            canvas.drawText(Utils.checkOutList.get(i).getPrice(), 700, 500 + j, paint);
+            canvas.drawText("1", 900, 500 + j, paint);
+            paint.setTextAlign(Paint.Align.RIGHT);
+            canvas.drawText(Utils.checkOutList.get(i).getPrice(), pageWidth - 40, 500 + j, paint);
+            j = j + 50;
+        }
+
+
+        paint.setColor(Color.BLACK);
+        paint.setTextSize(30f);
+
+        paint.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText("Total", pageWidth - 100, 600 + j, paint);
+        canvas.drawText("" + totalPrice, pageWidth - 40, 600 + j, paint);
+
+        pdfDocument.finishPage(page);
+
+
+        String fileName = "User" + Calendar.getInstance().getTimeInMillis() + ".pdf";
+        File file = new File(android.os.Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/", fileName);
+        try {
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+                pdfDocument.writeTo(new FileOutputStream(file));
+            } else {
+                pdfDocument.writeTo(new FileOutputStream(file));
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        pdfDocument.close();
+
+        //Check if the Bluetooth is available and on.
+        if (!Tools.isBlueToothOn(ScannerActivity.this)) return;
+
+        PrefMng.saveActivePrinter(ScannerActivity.this, PrefMng.PRN_WOOSIM_SELECTED);
+
+        //Pick a Bluetooth device
+        Intent i = new Intent(ScannerActivity.this, DemoActivity.class);
+        startActivityForResult(i, REQUEST_CONNECT);
+//        printPDF(fileName);
+
+
+//        isRefresh = true;
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mPrnMng != null) mPrnMng.releaseAllocatoins();
+        super.onDestroy();
+    }
+
+    private void printPDF(String fileName) {
+        PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+        try {
+            PrintDocumentAdapter printDocumentAdapter = new PdfDocumentAdapter(ScannerActivity.this, Common.getAppPath(ScannerActivity.this) + "" + fileName);
+            printManager.print("Document", printDocumentAdapter, new PrintAttributes.Builder().build());
+
+        } catch (Exception e) {
+            Log.d(TAG, "printPDF: " + e.getMessage());
+        }
+
+    }
+
+    //for pdf
+//    private ArrayList<String[]> getPDFReceipt() {
+//        ArrayList<String[]> rows = new ArrayList<>();
+//
+//        final DatabaseAccess databaseAccess = DatabaseAccess.getInstance(OrderDetailsActivity.this);
+//        databaseAccess.open();
+//
+//        String name, price, qty, weight;
+//        double costTotal;
+//
+//        for (int i = 0; i < orderDetails.size(); i++) {
+//
+//            name = orderDetails.get(i).getProductName();
+//
+//            price = orderDetails.get(i).getProductPrice();
+//            qty = orderDetails.get(i).getProductQuantity();
+//            weight = orderDetails.get(i).getProductWeight();
+//
+//            costTotal = Integer.parseInt(qty) * Double.parseDouble(price);
+//
+//            rows.add(new String[]{name + "\n" + weight + "\n" + "(" + qty + "x" + currency + price + ")", currency + costTotal});
+//
+//
+//        }
+//        rows.add(new String[]{"..........................................", ".................................."});
+//        rows.add(new String[]{"Sub Total: ", "(+)"+currency + f.format(Double.parseDouble(orderPrice))});
+//        rows.add(new String[]{"Total Tax: ", "(+)"+currency + f.format(Double.parseDouble(tax))});
+//        rows.add(new String[]{"Discount: ", "(-)"+currency + discount});
+//        rows.add(new String[]{"..........................................", ".................................."});
+//        rows.add(new String[]{"Total Price: ", currency + f.format(calculatedTotalPrice)});
+//
+////        you can add more row above format
+//        return rows;
+//    }
 
     class GetUserInfo extends AsyncTask<Void, Void, Void> {
 
@@ -867,28 +1046,6 @@ public class ScannerActivity extends AppCompatActivity {
         }
     }
 
-
-    public void setDataIntoJson() {
-        postDataParams = new JSONObject();
-        try {
-            String dateTime = dateConverter();
-            postDataParams.put("id", SHEET_ID);
-            postDataParams.put("userId", finalRowUserNumber);
-            postDataParams.put("balance", finalBalance);
-            postDataParams.put("date", dateTime);
-            postDataParams.put("remain", finalRemain);
-
-            postDataParams.put("uname", Utils.userList.get(userPos).getName());
-            postDataParams.put("price", String.valueOf(totalPrice));
-            postDataParams.put("pname", productNames);
-
-            new SendRequest().execute();
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
     public class SendRequest extends AsyncTask<String, Void, String> {
 
 
@@ -914,7 +1071,7 @@ public class ScannerActivity extends AppCompatActivity {
                 conn.setDoOutput(true);
 
                 OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
                 String postDataString = getPostDataString(postDataParams);
                 Log.d(TAG, "doInBackground: " + postDataString);
                 writer.write(postDataString);
@@ -928,7 +1085,7 @@ public class ScannerActivity extends AppCompatActivity {
                 if (responseCode == HttpsURLConnection.HTTP_OK) {
 
                     BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuffer sb = new StringBuffer("");
+                    StringBuffer sb = new StringBuffer();
                     String line = "";
 
                     while ((line = in.readLine()) != null) {
@@ -941,10 +1098,10 @@ public class ScannerActivity extends AppCompatActivity {
                     return sb.toString();
 
                 } else {
-                    return new String("false : " + responseCode);
+                    return "false : " + responseCode;
                 }
             } catch (Exception e) {
-                return new String("Exception: " + e.getMessage());
+                return "Exception: " + e.getMessage();
             }
         }
 
@@ -959,171 +1116,6 @@ public class ScannerActivity extends AppCompatActivity {
 
 
         }
-    }
-
-    public String getPostDataString(JSONObject params) throws Exception {
-
-        StringBuilder result = new StringBuilder();
-        boolean first = true;
-
-        Iterator<String> itr = params.keys();
-
-        while (itr.hasNext()) {
-
-            String key = itr.next();
-            Object value = params.get(key);
-
-            if (first)
-                first = false;
-            else
-                result.append("&");
-
-            result.append(URLEncoder.encode(key, "UTF-8"));
-            result.append("=");
-            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
-
-        }
-        return result.toString();
-    }
-
-    private void createPdf() {
-
-        float pageWidth = 500;
-        float pageHeight = 1000;
-
-
-        PdfDocument pdfDocument = new PdfDocument();
-        Paint paint = new Paint();
-        Paint titlePaint = new Paint();
-
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder((int) pageWidth, (int) pageHeight, 1).create();
-        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
-        Canvas canvas = page.getCanvas();
-
-
-        // add name of pizza
-        titlePaint.setTextAlign(Paint.Align.CENTER);
-        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        titlePaint.setTextSize(20f);
-        canvas.drawText("Recette App Production", pageWidth / 2, 200, titlePaint);
-
-
-        // date and time
-        paint.setTextAlign(Paint.Align.RIGHT);
-        paint.setTextSize(16f);
-        Date date = new Date();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy");
-        canvas.drawText("Date: " + simpleDateFormat.format(date), pageWidth - 20, 300, paint);
-        SimpleDateFormat simpleTimeFormat = new SimpleDateFormat("HH:mm:ss");
-        canvas.drawText("Time: " + simpleTimeFormat.format(date), pageWidth - 20, 350, paint);
-        int j = 0;
-        for (int i = 0; i < Utils.checkOutList.size(); i++) {
-
-            // draw qty prices etc...
-            canvas.drawText("1", 40, 500 + j, paint);
-            canvas.drawText(Utils.checkOutList.get(i).getName(), 200, 500 + j, paint);
-            canvas.drawText(Utils.checkOutList.get(i).getPrice(), 700, 500 + j, paint);
-            canvas.drawText("1", 900, 500 + j, paint);
-            paint.setTextAlign(Paint.Align.RIGHT);
-            canvas.drawText(Utils.checkOutList.get(i).getPrice(), pageWidth - 40, 500 + j, paint);
-            j = j + 50;
-        }
-
-
-        paint.setColor(Color.BLACK);
-        paint.setTextSize(30f);
-
-        paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("Total", pageWidth - 100, 600 + j, paint);
-        canvas.drawText("" + totalPrice, pageWidth - 40, 600 + j, paint);
-
-        pdfDocument.finishPage(page);
-
-
-        String fileName = "User" + Calendar.getInstance().getTimeInMillis() + ".pdf";
-        File file = new File(android.os.Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + getString(R.string.app_name) + "/", fileName);
-        try {
-            if (!file.exists()) {
-                file.getParentFile().mkdirs();
-                pdfDocument.writeTo(new FileOutputStream(file));
-            } else {
-                pdfDocument.writeTo(new FileOutputStream(file));
-
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        pdfDocument.close();
-
-        //Check if the Bluetooth is available and on.
-        if (!Tools.isBlueToothOn(ScannerActivity.this)) return;
-
-        PrefMng.saveActivePrinter(ScannerActivity.this, PrefMng.PRN_WOOSIM_SELECTED);
-
-        //Pick a Bluetooth device
-        Intent i = new Intent(ScannerActivity.this, DeviceListActivity.class);
-        startActivityForResult(i, REQUEST_CONNECT);
-//        printPDF(fileName);
-
-
-        isRefresh = true;
-
-    }
-
-    //for pdf
-//    private ArrayList<String[]> getPDFReceipt() {
-//        ArrayList<String[]> rows = new ArrayList<>();
-//
-//        final DatabaseAccess databaseAccess = DatabaseAccess.getInstance(OrderDetailsActivity.this);
-//        databaseAccess.open();
-//
-//        String name, price, qty, weight;
-//        double costTotal;
-//
-//        for (int i = 0; i < orderDetails.size(); i++) {
-//
-//            name = orderDetails.get(i).getProductName();
-//
-//            price = orderDetails.get(i).getProductPrice();
-//            qty = orderDetails.get(i).getProductQuantity();
-//            weight = orderDetails.get(i).getProductWeight();
-//
-//            costTotal = Integer.parseInt(qty) * Double.parseDouble(price);
-//
-//            rows.add(new String[]{name + "\n" + weight + "\n" + "(" + qty + "x" + currency + price + ")", currency + costTotal});
-//
-//
-//        }
-//        rows.add(new String[]{"..........................................", ".................................."});
-//        rows.add(new String[]{"Sub Total: ", "(+)"+currency + f.format(Double.parseDouble(orderPrice))});
-//        rows.add(new String[]{"Total Tax: ", "(+)"+currency + f.format(Double.parseDouble(tax))});
-//        rows.add(new String[]{"Discount: ", "(-)"+currency + discount});
-//        rows.add(new String[]{"..........................................", ".................................."});
-//        rows.add(new String[]{"Total Price: ", currency + f.format(calculatedTotalPrice)});
-//
-////        you can add more row above format
-//        return rows;
-//    }
-
-
-    @Override
-    protected void onDestroy() {
-        if (mPrnMng != null) mPrnMng.releaseAllocatoins();
-        super.onDestroy();
-    }
-
-
-    private void printPDF(String fileName) {
-        PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-        try {
-            PrintDocumentAdapter printDocumentAdapter = new PdfDocumentAdapter(ScannerActivity.this, Common.getAppPath(ScannerActivity.this) + "" + fileName);
-            printManager.print("Document", printDocumentAdapter, new PrintAttributes.Builder().build());
-
-        } catch (Exception e) {
-            Log.d(TAG, "printPDF: " + e.getMessage());
-        }
-
     }
 
 }

@@ -1,10 +1,14 @@
 package com.example.recetteapp.pos;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.widget.Toast;
 
+import com.example.recetteapp.MainActivity;
 import com.example.recetteapp.ProductModel;
+import com.example.recetteapp.ScannerActivity;
+import com.example.recetteapp.Utils;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.woosim.printer.WoosimCmd;
@@ -121,5 +125,8 @@ public class TestPrinter implements IPrintToPrinter {
         } else {
             Toast.makeText(context, "Print Error", Toast.LENGTH_SHORT).show();
         }
+        Utils.checkOutList.clear();
+        context.startActivity(new Intent(context, MainActivity.class));
+
     }
 }

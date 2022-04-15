@@ -106,16 +106,7 @@ public class PrintActivity extends AppCompatActivity {
             }
             if (bluetoothAdapter.isEnabled()) {
                 Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
+
                 startActivityForResult(
                         enableBT, 0);
             }
@@ -148,16 +139,7 @@ public class PrintActivity extends AppCompatActivity {
 
             //Standard uuid from string //
             UUID uuidSting = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return;
-            }
+
             bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(uuidSting);
             bluetoothSocket.connect();
             outputStream=bluetoothSocket.getOutputStream();

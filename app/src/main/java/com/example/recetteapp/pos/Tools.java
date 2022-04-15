@@ -1,16 +1,20 @@
 package com.example.recetteapp.pos;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.widget.Toast;
+
+import androidx.core.app.ActivityCompat;
 
 import com.example.recetteapp.R;
 
 
 public class Tools {
 
-    public static boolean isBlueToothOn(Context c){
+    public static boolean isBlueToothOn(Context c) {
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
             Toast.makeText(c, c.getString(R.string.bluetooth_not_available), Toast.LENGTH_LONG).show();
@@ -19,6 +23,7 @@ public class Tools {
         if (!mBluetoothAdapter.isEnabled()) {
             Toast.makeText(c, c.getString(R.string.turnon_bluetooth), Toast.LENGTH_LONG).show();
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+
             c.startActivity(enableIntent);
             return false;
         }

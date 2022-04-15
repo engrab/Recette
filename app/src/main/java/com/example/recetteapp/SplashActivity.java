@@ -8,6 +8,8 @@ import android.os.Handler;
 import android.view.Window;
 import android.view.WindowManager;
 
+import com.example.recetteapp.pos.DeviceListActivity;
+
 public class SplashActivity extends AppCompatActivity {
 
     @Override
